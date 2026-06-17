@@ -20,6 +20,11 @@ Pages (static hosting).
   - `p50k_base` — Codex, text-davinci-002/003
   - `r50k_base` — GPT-3 (davinci, curie, babbage, ada)
 - Visualize how the text is split into tokens, and view the raw token IDs
+- **Word cluster map** — embed the unique words in your text with a small
+  in-browser AI model ([Transformers.js](https://github.com/huggingface/transformers.js),
+  `all-MiniLM-L6-v2`), then see them grouped by meaning in a 2D scatter plot
+  (PCA + k-means). The model (~25 MB) only downloads when you click *Generate
+  cluster map*.
 
 ## How it works
 

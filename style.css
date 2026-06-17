@@ -165,6 +165,78 @@ code {
 .status.error { background: #2d1416; border-color: #5c2326; color: #f87171; }
 .status.hidden { display: none; }
 
+/* --- Word cluster map --- */
+.cluster-hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 65ch;
+}
+
+.cluster-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cluster-controls label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#kClusters {
+  appearance: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.cluster-status {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.cluster-status.busy { background: #102033; border-color: #1d3a5c; color: #6ea8ff; }
+.cluster-status.ready { background: #102a1f; border-color: #1d4d38; color: #56d364; }
+.cluster-status.error { background: #2d1416; border-color: #5c2326; color: #f87171; }
+.cluster-status.hidden { display: none; }
+
+.cluster-plot:empty { display: none; }
+.cluster-svg {
+  width: 100%;
+  height: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.cluster-svg .pt text { pointer-events: none; }
+.cluster-svg .pt:hover circle { r: 7; }
+
 footer {
   margin-top: 32px;
   color: var(--muted);

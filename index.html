@@ -51,6 +51,29 @@
       <pre id="ids" class="ids"></pre>
     </section>
 
+    <section class="cluster">
+      <h2 class="view-title">Word cluster map</h2>
+      <p class="cluster-hint">
+        See how the unique words in your text group together by meaning. Words are
+        embedded with a small AI model that runs entirely in your browser
+        (~25&nbsp;MB, downloaded once), projected to 2D, and colored into clusters.
+      </p>
+      <div class="cluster-controls">
+        <label for="kClusters">Clusters
+          <select id="kClusters">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </label>
+        <button id="genCluster" class="btn" type="button">Generate cluster map</button>
+      </div>
+      <div id="clusterStatus" class="cluster-status hidden"></div>
+      <div id="clusterPlot" class="cluster-plot"></div>
+    </section>
+
     <div id="status" class="status">Loading Python &amp; the tokenizer…</div>
 
     <footer>
@@ -66,5 +89,6 @@
   </main>
 
   <script src="app.js"></script>
+  <script src="cluster.js"></script>
 </body>
 </html>

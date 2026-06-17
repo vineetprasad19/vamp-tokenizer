@@ -1,0 +1,2 @@
+# Vocab files must be preserved byte-for-byte (tiktoken verifies their hash).
+*.tiktoken binary

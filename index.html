@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vamp Tokenizer — OpenAI token counter in Python</title>
+  <meta name="description" content="Count OpenAI tokens and characters in your text. Real tiktoken running in your browser via Python (Pyodide). Nothing is sent to a server." />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js"></script>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Vamp Tokenizer</h1>
+      <p class="sub">
+        The real OpenAI <code>tiktoken</code> tokenizer, running as Python in your
+        browser. Type below to count tokens and characters — your text never
+        leaves your device.
+      </p>
+    </header>
+
+    <section class="controls">
+      <label for="model">Model / encoding</label>
+      <select id="model" disabled></select>
+    </section>
+
+    <section class="io">
+      <textarea id="input" placeholder="Type or paste text here…" spellcheck="false" disabled></textarea>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <span class="num" id="tokenCount">0</span>
+        <span class="lbl">Tokens</span>
+      </div>
+      <div class="stat">
+        <span class="num" id="charCount">0</span>
+        <span class="lbl">Characters</span>
+      </div>
+      <div class="stat">
+        <span class="num" id="wordCount">0</span>
+        <span class="lbl">Words</span>
+      </div>
+    </section>
+
+    <section class="viewer">
+      <h2 class="view-title">Tokens</h2>
+      <div id="tokens" class="tokens" aria-live="polite"></div>
+
+      <h2 class="view-title">Token IDs</h2>
+      <pre id="ids" class="ids"></pre>
+    </section>
+
+    <div id="status" class="status">Loading Python &amp; the tokenizer…</div>
+
+    <footer>
+      <p>
+        100% client-side · powered by
+        <a href="https://github.com/openai/tiktoken" target="_blank" rel="noopener">tiktoken</a>
+        +
+        <a href="https://pyodide.org" target="_blank" rel="noopener">Pyodide</a>.
+        Inspired by the
+        <a href="https://platform.openai.com/tokenizer" target="_blank" rel="noopener">OpenAI tokenizer</a>.
+      </p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

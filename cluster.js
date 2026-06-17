@@ -1,11 +1,13 @@
-// Word cluster map — embeds unique words with a small in-browser model
-// (Transformers.js / all-MiniLM-L6-v2), reduces to 2D with PCA, clusters with
-// k-means, and draws an interactive scatter plot. Loaded lazily on click so the
-// ~25 MB model only downloads if the user actually wants the graph.
+// Vector Graph — embeds the unique words in the text box with a small in-browser
+// model (Transformers.js / all-MiniLM-L6-v2), reduces to 3D with PCA, clusters
+// with k-means, and draws a rotatable X/Y/Z scatter. Runs live as you type:
+// each word's embedding is cached so typing only embeds new words. The model
+// loads automatically on first input (one-time ~25 MB download).
 
 const TRANSFORMERS_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.3";
 const MODEL = "Xenova/all-MiniLM-L6-v2";
 const MAX_WORDS = 200;
+const DEBOUNCE_MS = 450;
 
 const CLUSTER_COLORS = [
   "#3fd3a6", "#6ea8ff", "#f0883e", "#d2a8ff",
@@ -13,15 +15,23 @@ const CLUSTER_COLORS = [
 ];
 
 const cEls = {
-  btn: document.getElementById("genCluster"),
   k: document.getElementById("kClusters"),
   status: document.getElementById("clusterStatus"),
   plot: document.getElementById("clusterPlot"),
   input: document.getElementById("input"),
 };
 
-let _extractor = null;          // cached model pipeline
-let _cache = { words: null, vecs: null }; // cache embeddings for the current word set
+let _extractor = null;             // cached model pipeline
+let _modelLoading = null;          // in-flight model load promise
+const _vecCache = new Map();       // word -> Float64Array(384)
+
+// Latest computed scene, kept so rotation re-projects without recomputing.
+let scene = null; // { words, coords3, labels, k }
+const view = { yaw: 0.6, pitch: 0.5 };
+
+let debounceTimer = null;
+let busy = false;
+let pending = false;
 
 function cStatus(msg, kind) {
   cEls.status.textContent = msg;
@@ -39,40 +49,39 @@ function extractWords(text) {
   return out.slice(0, MAX_WORDS);
 }
 
-// --- Model ----------------------------------------------------------------
+// --- Model + embeddings (per-word cache) ----------------------------------
 async function getExtractor() {
   if (_extractor) return _extractor;
-  const { pipeline, env } = await import(TRANSFORMERS_URL);
-  env.allowLocalModels = false; // fetch the model from the Hugging Face hub
-  _extractor = await pipeline("feature-extraction", MODEL, {
-    progress_callback: (p) => {
-      if (p.status === "progress" && p.total) {
-        const pct = Math.round((p.loaded / p.total) * 100);
-        cStatus(`Downloading model… ${pct}% (one-time, then cached)`, "busy");
-      } else if (p.status === "ready" || p.status === "done") {
-        cStatus("Model ready — embedding your words…", "busy");
-      }
-    },
-  });
-  return _extractor;
+  if (_modelLoading) return _modelLoading;
+  _modelLoading = (async () => {
+    const { pipeline, env } = await import(TRANSFORMERS_URL);
+    env.allowLocalModels = false; // fetch the model from the Hugging Face hub
+    _extractor = await pipeline("feature-extraction", MODEL, {
+      progress_callback: (p) => {
+        if (p.status === "progress" && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 100);
+          cStatus(`Downloading model… ${pct}% (one-time, then cached)`, "busy");
+        }
+      },
+    });
+    return _extractor;
+  })();
+  return _modelLoading;
 }
 
-async function embed(words) {
-  if (_cache.words && sameWords(_cache.words, words)) return _cache.vecs;
-  const extractor = await getExtractor();
-  cStatus("Embedding your words…", "busy");
-  const output = await extractor(words, { pooling: "mean", normalize: true });
-  const vecs = output.tolist(); // N x 384
-  _cache = { words: words.slice(), vecs };
-  return vecs;
+async function embedWords(words) {
+  const missing = words.filter((w) => !_vecCache.has(w));
+  if (missing.length) {
+    const extractor = await getExtractor();
+    const output = await extractor(missing, { pooling: "mean", normalize: true });
+    const vecs = output.tolist(); // missing.length x 384
+    missing.forEach((w, i) => _vecCache.set(w, Float64Array.from(vecs[i])));
+  }
+  return words.map((w) => _vecCache.get(w));
 }
 
-function sameWords(a, b) {
-  return a.length === b.length && a.every((w, i) => w === b[i]);
-}
-
-// --- PCA to 2D (power iteration on the covariance, no full matrix) ---------
-function pca2(data) {
+// --- PCA to K dims (power iteration on the covariance) ---------------------
+function pcaK(data, K) {
   const n = data.length, d = data[0].length;
   const mean = new Float64Array(d);
   for (const row of data) for (let j = 0; j < d; j++) mean[j] += row[j];
@@ -84,8 +93,7 @@ function pca2(data) {
     s = Math.sqrt(s) || 1;
     return Float64Array.from(v, (x) => x / s);
   };
-  // C v = X^T (X v), computed without materializing the 384x384 covariance.
-  const Cv = (v) => {
+  const Cv = (v) => { // C v = X^T (X v), no explicit covariance matrix
     const Xv = new Float64Array(n);
     for (let i = 0; i < n; i++) {
       let s = 0; const row = X[i];
@@ -103,7 +111,7 @@ function pca2(data) {
     let v = normalize(Float64Array.from({ length: d }, () => Math.random() - 0.5));
     for (let it = 0; it < 80; it++) {
       let cv = Cv(v);
-      for (const u of deflate) { // keep orthogonal to earlier components
+      for (const u of deflate) {
         let dot = 0; for (let j = 0; j < d; j++) dot += cv[j] * u[j];
         for (let j = 0; j < d; j++) cv[j] -= dot * u[j];
       }
@@ -111,13 +119,12 @@ function pca2(data) {
     }
     return v;
   };
-  const pc1 = powerIter([]);
-  const pc2 = powerIter([pc1]);
-  return X.map((row) => {
-    let a = 0, b = 0;
-    for (let j = 0; j < d; j++) { a += row[j] * pc1[j]; b += row[j] * pc2[j]; }
-    return [a, b];
-  });
+  const comps = [];
+  for (let c = 0; c < K; c++) comps.push(powerIter(comps.slice()));
+  return X.map((row) => comps.map((pc) => {
+    let s = 0; for (let j = 0; j < d; j++) s += row[j] * pc[j];
+    return s;
+  }));
 }
 
 // --- k-means (k-means++ init) on the full embeddings ----------------------
@@ -161,78 +168,151 @@ function kmeans(data, k, iters = 30) {
   return labels;
 }
 
-// --- SVG scatter ----------------------------------------------------------
+// --- 3D rotation + SVG projection -----------------------------------------
+function rotate([x, y, z], yaw, pitch) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const x1 = x * cy + z * sy;
+  const z1 = -x * sy + z * cy;
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const y2 = y * cp - z1 * sp;
+  const z2 = y * sp + z1 * cp;
+  return [x1, y2, z2];
+}
+
 function svgEl(name, attrs) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", name);
   for (const [key, val] of Object.entries(attrs)) el.setAttribute(key, val);
   return el;
 }
 
-function renderPlot(words, coords, labels, k) {
-  const W = 800, H = 520, pad = 48;
-  const xs = coords.map((c) => c[0]), ys = coords.map((c) => c[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const sx = (x) => pad + ((x - minX) / ((maxX - minX) || 1)) * (W - 2 * pad);
-  const sy = (y) => H - pad - ((y - minY) / ((maxY - minY) || 1)) * (H - 2 * pad);
+function renderScene() {
+  if (!scene) return;
+  const { words, coords3, labels, k } = scene;
+  const W = 820, H = 580, pad = 56;
+  const cx = W / 2, cy = H / 2;
 
-  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "cluster-svg", role: "img" });
+  // Scale so the most distant point fits regardless of rotation.
+  let R = 0;
+  for (const p of coords3) R = Math.max(R, Math.hypot(p[0], p[1], p[2]));
+  R = R || 1;
+  const half = Math.min(W, H) / 2 - pad;
+  const scale = half / R;
+  const proj = (p) => {
+    const [rx, ry, rz] = rotate(p, view.yaw, view.pitch);
+    return { x: cx + rx * scale, y: cy - ry * scale, z: rz };
+  };
 
-  for (let i = 0; i < words.length; i++) {
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "cluster-svg" });
+
+  // Axes (X, Y, Z) from origin.
+  const axes = [
+    { v: [R, 0, 0], name: "X", color: "#f7768e" },
+    { v: [0, R, 0], name: "Y", color: "#56d364" },
+    { v: [0, 0, R], name: "Z", color: "#6ea8ff" },
+  ];
+  const origin = proj([0, 0, 0]);
+  for (const ax of axes) {
+    const end = proj(ax.v);
+    svg.appendChild(svgEl("line", {
+      x1: origin.x, y1: origin.y, x2: end.x, y2: end.y,
+      stroke: ax.color, "stroke-width": "1.5", "stroke-opacity": "0.55",
+    }));
+    const lab = svgEl("text", {
+      x: end.x, y: end.y, fill: ax.color, "font-size": "13", "font-weight": "700",
+    });
+    lab.textContent = ax.name;
+    svg.appendChild(lab);
+  }
+
+  // Points: draw far-to-near so nearer dots sit on top.
+  const pts = coords3.map((p, i) => ({ ...proj(p), i }));
+  pts.sort((a, b) => a.z - b.z);
+  const minZ = pts[0].z, maxZ = pts[pts.length - 1].z;
+  for (const pt of pts) {
+    const i = pt.i;
     const color = CLUSTER_COLORS[labels[i] % CLUSTER_COLORS.length];
-    const cx = sx(coords[i][0]), cy = sy(coords[i][1]);
+    const depth = (pt.z - minZ) / ((maxZ - minZ) || 1); // 0 far, 1 near
+    const r = 3.5 + depth * 3;
     const g = svgEl("g", { class: "pt" });
-    const dot = svgEl("circle", { cx, cy, r: 5, fill: color, "fill-opacity": "0.85" });
+    const dot = svgEl("circle", { cx: pt.x, cy: pt.y, r, fill: color, "fill-opacity": (0.5 + depth * 0.5).toFixed(2) });
     const title = svgEl("title", {});
     title.textContent = `${words[i]} — cluster ${labels[i] + 1}`;
     dot.appendChild(title);
-    const label = svgEl("text", { x: cx + 7, y: cy + 4, fill: "#c9d1d9", "font-size": "11" });
+    const label = svgEl("text", { x: pt.x + r + 2, y: pt.y + 4, fill: "#c9d1d9", "font-size": "11", "fill-opacity": (0.45 + depth * 0.55).toFixed(2) });
     label.textContent = words[i];
     g.append(dot, label);
     svg.appendChild(g);
   }
 
-  // simple legend
-  const legend = svgEl("g", {});
+  // Legend.
   for (let c = 0; c < k; c++) {
     const ly = pad + c * 18;
-    legend.appendChild(svgEl("circle", { cx: W - pad - 90, cy: ly, r: 5, fill: CLUSTER_COLORS[c % CLUSTER_COLORS.length] }));
-    const t = svgEl("text", { x: W - pad - 78, y: ly + 4, fill: "#8b949e", "font-size": "11" });
+    svg.appendChild(svgEl("circle", { cx: W - pad - 80, cy: ly, r: 5, fill: CLUSTER_COLORS[c % CLUSTER_COLORS.length] }));
+    const t = svgEl("text", { x: W - pad - 68, y: ly + 4, fill: "#8b949e", "font-size": "11" });
     t.textContent = `Cluster ${c + 1}`;
-    legend.appendChild(t);
+    svg.appendChild(t);
   }
-  svg.appendChild(legend);
 
+  enableRotate(svg);
   cEls.plot.replaceChildren(svg);
 }
 
-// --- Orchestration --------------------------------------------------------
-async function generate() {
-  const words = extractWords(cEls.input.value);
-  if (words.length < 3) {
-    cStatus("Add at least 3 different words in the text box to map them.", "error");
-    cEls.plot.replaceChildren();
-    return;
-  }
-  cEls.btn.disabled = true;
-  cEls.k.disabled = true;
+// --- Drag to rotate (re-projects cached 3D coords, no recompute) -----------
+function enableRotate(svg) {
+  let dragging = false, lastX = 0, lastY = 0;
+  svg.style.cursor = "grab";
+  svg.addEventListener("pointerdown", (e) => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    svg.setPointerCapture(e.pointerId); svg.style.cursor = "grabbing";
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    view.yaw += (e.clientX - lastX) * 0.01;
+    view.pitch += (e.clientY - lastY) * 0.01;
+    view.pitch = Math.max(-1.4, Math.min(1.4, view.pitch));
+    lastX = e.clientX; lastY = e.clientY;
+    renderScene();
+  });
+  const stop = () => { dragging = false; svg.style.cursor = "grab"; };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+}
+
+// --- Live orchestration ---------------------------------------------------
+async function recompute() {
+  if (busy) { pending = true; return; }
+  busy = true;
   try {
-    const vecs = await embed(words);
+    const words = extractWords(cEls.input.value);
+    if (words.length < 4) {
+      scene = null;
+      cEls.plot.replaceChildren();
+      cStatus("Type at least 4 different words to build the vector graph.", null);
+      return;
+    }
+    const vecs = await embedWords(words);
     cStatus("Projecting & clustering…", "busy");
-    // Yield so the status paints before the synchronous math.
-    await new Promise((r) => setTimeout(r, 0));
-    const coords = pca2(vecs);
-    const k = parseInt(cEls.k.value, 10);
+    await new Promise((r) => setTimeout(r, 0)); // let status paint
+    const coords3 = pcaK(vecs, 3);
+    const k = Math.min(parseInt(cEls.k.value, 10), words.length);
     const labels = kmeans(vecs, k);
-    renderPlot(words, coords, labels, Math.min(k, words.length));
-    cStatus(`Mapped ${words.length} unique words into ${Math.min(k, words.length)} clusters.`, "ready");
+    scene = { words, coords3, labels, k };
+    renderScene();
+    cStatus(`${words.length} words · ${k} clusters · drag to rotate`, "ready");
   } catch (err) {
     console.error(err);
-    cStatus("Could not build the cluster map: " + err.message, "error");
+    cStatus("Vector graph error: " + err.message, "error");
   } finally {
-    cEls.btn.disabled = false;
-    cEls.k.disabled = false;
+    busy = false;
+    if (pending) { pending = false; recompute(); }
   }
 }
 
-cEls.btn.addEventListener("click", generate);
+function schedule() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(recompute, DEBOUNCE_MS);
+}
+
+cEls.input.addEventListener("input", schedule);
+cEls.k.addEventListener("change", recompute);
+cStatus("Start typing — the vector graph builds live (first use downloads a ~25 MB model once).", null);

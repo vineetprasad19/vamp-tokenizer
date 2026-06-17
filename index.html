@@ -52,11 +52,12 @@
     </section>
 
     <section class="cluster">
-      <h2 class="view-title">Word cluster map</h2>
+      <h2 class="view-title">Vector Graph</h2>
       <p class="cluster-hint">
-        See how the unique words in your text group together by meaning. Words are
-        embedded with a small AI model that runs entirely in your browser
-        (~25&nbsp;MB, downloaded once), projected to 2D, and colored into clusters.
+        Your unique words embedded in 3D by meaning — it updates live as you type.
+        Words are embedded with a small AI model that runs entirely in your browser
+        (~25&nbsp;MB, downloaded once on first use), projected onto X/Y/Z axes, and
+        colored into clusters. <strong>Drag the graph to rotate it.</strong>
       </p>
       <div class="cluster-controls">
         <label for="kClusters">Clusters
@@ -68,7 +69,6 @@
             <option value="6">6</option>
           </select>
         </label>
-        <button id="genCluster" class="btn" type="button">Generate cluster map</button>
       </div>
       <div id="clusterStatus" class="cluster-status hidden"></div>
       <div id="clusterPlot" class="cluster-plot"></div>

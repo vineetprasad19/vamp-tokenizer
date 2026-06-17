@@ -54,12 +54,14 @@
     <section class="cluster">
       <h2 class="view-title">Vector Graph</h2>
       <p class="cluster-hint">
-        Your unique words embedded in 3D by meaning — it updates live as you type.
-        Words are embedded with a small AI model that runs entirely in your browser
-        (~25&nbsp;MB, downloaded once on first use), projected onto X/Y/Z axes, and
-        colored into clusters. <strong>Drag the graph to rotate it.</strong>
+        Your unique words embedded in 3D by meaning. Type some text, then click
+        <em>Generate vector graph</em>. Words are embedded with a small AI model
+        that runs entirely in your browser (~25&nbsp;MB, downloaded once on first
+        use), projected onto X/Y/Z axes, and colored into clusters.
+        <strong>Drag to rotate · scroll to zoom.</strong>
       </p>
       <div class="cluster-controls">
+        <button id="genCluster" class="btn" type="button">Generate vector graph</button>
         <label for="kClusters">Clusters
           <select id="kClusters">
             <option value="2">2</option>
@@ -69,6 +71,7 @@
             <option value="6">6</option>
           </select>
         </label>
+        <label class="check"><input type="checkbox" id="autoRotate" checked> Auto-rotate</label>
       </div>
       <div id="clusterStatus" class="cluster-status hidden"></div>
       <div id="clusterPlot" class="cluster-plot"></div>

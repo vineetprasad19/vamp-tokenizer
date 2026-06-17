@@ -7,7 +7,6 @@
 const TRANSFORMERS_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.3";
 const MODEL = "Xenova/all-MiniLM-L6-v2";
 const MAX_WORDS = 200;
-const DEBOUNCE_MS = 450;
 
 const CLUSTER_COLORS = [
   "#3fd3a6", "#6ea8ff", "#f0883e", "#d2a8ff",
@@ -15,23 +14,25 @@ const CLUSTER_COLORS = [
 ];
 
 const cEls = {
+  btn: document.getElementById("genCluster"),
   k: document.getElementById("kClusters"),
   status: document.getElementById("clusterStatus"),
   plot: document.getElementById("clusterPlot"),
   input: document.getElementById("input"),
+  autoRotate: document.getElementById("autoRotate"),
 };
 
 let _extractor = null;             // cached model pipeline
 let _modelLoading = null;          // in-flight model load promise
 const _vecCache = new Map();       // word -> Float64Array(384)
 
-// Latest computed scene, kept so rotation re-projects without recomputing.
+// Latest computed scene, kept so rotation/zoom re-projects without recomputing.
 let scene = null; // { words, coords3, labels, k }
-const view = { yaw: 0.6, pitch: 0.5 };
+let gfx = null;   // built SVG element references, reused across re-projections
+const view = { yaw: 0.6, pitch: 0.5, zoom: 1 };
+let dragging = false;
 
-let debounceTimer = null;
 let busy = false;
-let pending = false;
 
 function cStatus(msg, kind) {
   cEls.status.textContent = msg;
@@ -185,81 +186,102 @@ function svgEl(name, attrs) {
   return el;
 }
 
-function renderScene() {
+const PLOT = { W: 760, H: 360, pad: 40 };
+
+// Build the SVG once per scene (new words/clusters); positions are set by
+// updateProjection() so rotation/zoom/auto-rotate never rebuild the DOM.
+function buildScene() {
   if (!scene) return;
-  const { words, coords3, labels, k } = scene;
-  const W = 760, H = 360, pad = 40;
-  const cx = W / 2, cy = H / 2;
-
-  // Scale so the most distant point fits regardless of rotation.
-  let R = 0;
-  for (const p of coords3) R = Math.max(R, Math.hypot(p[0], p[1], p[2]));
-  R = R || 1;
-  const half = Math.min(W, H) / 2 - pad;
-  const scale = half / R;
-  const proj = (p) => {
-    const [rx, ry, rz] = rotate(p, view.yaw, view.pitch);
-    return { x: cx + rx * scale, y: cy - ry * scale, z: rz };
-  };
-
+  const { words, labels, k } = scene;
+  const { W, H, pad } = PLOT;
   const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "cluster-svg" });
 
-  // Axes (X, Y, Z) from origin.
-  const axes = [
-    { v: [R, 0, 0], name: "X", color: "#f7768e" },
-    { v: [0, R, 0], name: "Y", color: "#56d364" },
-    { v: [0, 0, R], name: "Z", color: "#6ea8ff" },
+  const axisDefs = [
+    { name: "X", color: "#f7768e" },
+    { name: "Y", color: "#56d364" },
+    { name: "Z", color: "#6ea8ff" },
   ];
-  const origin = proj([0, 0, 0]);
-  for (const ax of axes) {
-    const end = proj(ax.v);
-    svg.appendChild(svgEl("line", {
-      x1: origin.x, y1: origin.y, x2: end.x, y2: end.y,
-      stroke: ax.color, "stroke-width": "1.5", "stroke-opacity": "0.55",
-    }));
-    const lab = svgEl("text", {
-      x: end.x, y: end.y, fill: ax.color, "font-size": "13", "font-weight": "700",
-    });
-    lab.textContent = ax.name;
-    svg.appendChild(lab);
-  }
+  const axes = axisDefs.map((a) => {
+    const line = svgEl("line", { stroke: a.color, "stroke-width": "1.5", "stroke-opacity": "0.55" });
+    const label = svgEl("text", { fill: a.color, "font-size": "13", "font-weight": "700" });
+    label.textContent = a.name;
+    svg.append(line, label);
+    return { line, label };
+  });
 
-  // Points: draw far-to-near so nearer dots sit on top.
-  const pts = coords3.map((p, i) => ({ ...proj(p), i }));
-  pts.sort((a, b) => a.z - b.z);
-  const minZ = pts[0].z, maxZ = pts[pts.length - 1].z;
-  for (const pt of pts) {
-    const i = pt.i;
+  const dots = [], dotLabels = [];
+  for (let i = 0; i < words.length; i++) {
     const color = CLUSTER_COLORS[labels[i] % CLUSTER_COLORS.length];
-    const depth = (pt.z - minZ) / ((maxZ - minZ) || 1); // 0 far, 1 near
-    const r = 3.5 + depth * 3;
     const g = svgEl("g", { class: "pt" });
-    const dot = svgEl("circle", { cx: pt.x, cy: pt.y, r, fill: color, "fill-opacity": (0.5 + depth * 0.5).toFixed(2) });
+    const dot = svgEl("circle", { r: 4, fill: color });
     const title = svgEl("title", {});
     title.textContent = `${words[i]} — cluster ${labels[i] + 1}`;
     dot.appendChild(title);
-    const label = svgEl("text", { x: pt.x + r + 2, y: pt.y + 4, fill: "#c9d1d9", "font-size": "11", "fill-opacity": (0.45 + depth * 0.55).toFixed(2) });
-    label.textContent = words[i];
-    g.append(dot, label);
+    const text = svgEl("text", { fill: "#c9d1d9", "font-size": "11" });
+    text.textContent = words[i];
+    g.append(dot, text);
     svg.appendChild(g);
+    dots.push(dot); dotLabels.push(text);
   }
 
-  // Legend.
   for (let c = 0; c < k; c++) {
-    const ly = pad + c * 18;
+    const ly = pad + c * 16;
     svg.appendChild(svgEl("circle", { cx: W - pad - 80, cy: ly, r: 5, fill: CLUSTER_COLORS[c % CLUSTER_COLORS.length] }));
     const t = svgEl("text", { x: W - pad - 68, y: ly + 4, fill: "#8b949e", "font-size": "11" });
     t.textContent = `Cluster ${c + 1}`;
     svg.appendChild(t);
   }
 
-  enableRotate(svg);
+  gfx = { svg, axes, dots, dotLabels };
+  enableInteractions(svg);
   cEls.plot.replaceChildren(svg);
+  updateProjection();
 }
 
-// --- Drag to rotate (re-projects cached 3D coords, no recompute) -----------
-function enableRotate(svg) {
-  let dragging = false, lastX = 0, lastY = 0;
+// Re-project cached 3D coords with the current view and update attributes only.
+function updateProjection() {
+  if (!gfx || !scene) return;
+  const { coords3 } = scene;
+  const { W, H, pad } = PLOT;
+  const cx = W / 2, cy = H / 2;
+
+  let R = 0;
+  for (const p of coords3) R = Math.max(R, Math.hypot(p[0], p[1], p[2]));
+  R = R || 1;
+  const scale = (Math.min(W, H) / 2 - pad) / R * view.zoom;
+  const proj = (p) => {
+    const [rx, ry, rz] = rotate(p, view.yaw, view.pitch);
+    return { x: cx + rx * scale, y: cy - ry * scale, z: rz };
+  };
+
+  const origin = proj([0, 0, 0]);
+  const axisVecs = [[R, 0, 0], [0, R, 0], [0, 0, R]];
+  gfx.axes.forEach((ax, idx) => {
+    const end = proj(axisVecs[idx]);
+    ax.line.setAttribute("x1", origin.x); ax.line.setAttribute("y1", origin.y);
+    ax.line.setAttribute("x2", end.x); ax.line.setAttribute("y2", end.y);
+    ax.label.setAttribute("x", end.x); ax.label.setAttribute("y", end.y);
+  });
+
+  const projected = coords3.map(proj);
+  let minZ = Infinity, maxZ = -Infinity;
+  for (const p of projected) { if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z; }
+  for (let i = 0; i < projected.length; i++) {
+    const p = projected[i];
+    const depth = (p.z - minZ) / ((maxZ - minZ) || 1); // 0 far, 1 near
+    const r = 3.5 + depth * 3;
+    const dot = gfx.dots[i];
+    dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y); dot.setAttribute("r", r);
+    dot.setAttribute("fill-opacity", (0.5 + depth * 0.5).toFixed(2));
+    const t = gfx.dotLabels[i];
+    t.setAttribute("x", p.x + r + 2); t.setAttribute("y", p.y + 4);
+    t.setAttribute("fill-opacity", (0.4 + depth * 0.6).toFixed(2));
+  }
+}
+
+// --- Drag to rotate + scroll to zoom (no recompute) -----------------------
+function enableInteractions(svg) {
+  let lastX = 0, lastY = 0;
   svg.style.cursor = "grab";
   svg.addEventListener("pointerdown", (e) => {
     dragging = true; lastX = e.clientX; lastY = e.clientY;
@@ -271,25 +293,44 @@ function enableRotate(svg) {
     view.pitch += (e.clientY - lastY) * 0.01;
     view.pitch = Math.max(-1.4, Math.min(1.4, view.pitch));
     lastX = e.clientX; lastY = e.clientY;
-    renderScene();
+    updateProjection();
   });
   const stop = () => { dragging = false; svg.style.cursor = "grab"; };
   svg.addEventListener("pointerup", stop);
   svg.addEventListener("pointercancel", stop);
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    view.zoom *= e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    view.zoom = Math.max(0.4, Math.min(6, view.zoom));
+    updateProjection();
+  }, { passive: false });
 }
 
-// --- Live orchestration ---------------------------------------------------
+// --- Gentle auto-rotate ---------------------------------------------------
+let _lastFrame = 0;
+function autoRotateLoop(ts) {
+  requestAnimationFrame(autoRotateLoop);
+  if (!gfx || dragging || !cEls.autoRotate.checked) return;
+  if (ts - _lastFrame < 33) return; // ~30 fps
+  _lastFrame = ts;
+  view.yaw += 0.004;
+  updateProjection();
+}
+requestAnimationFrame(autoRotateLoop);
+
+// --- Generate (button click) ----------------------------------------------
 async function recompute() {
-  if (busy) { pending = true; return; }
+  if (busy) return;
+  const words = extractWords(cEls.input.value);
+  if (words.length < 4) {
+    scene = null; gfx = null;
+    cEls.plot.replaceChildren();
+    cStatus("Type at least 4 different words, then click Generate.", "error");
+    return;
+  }
   busy = true;
+  cEls.btn.disabled = true;
   try {
-    const words = extractWords(cEls.input.value);
-    if (words.length < 4) {
-      scene = null;
-      cEls.plot.replaceChildren();
-      cStatus("Type at least 4 different words to build the vector graph.", null);
-      return;
-    }
     const vecs = await embedWords(words);
     cStatus("Projecting & clustering…", "busy");
     await new Promise((r) => setTimeout(r, 0)); // let status paint
@@ -297,22 +338,17 @@ async function recompute() {
     const k = Math.min(parseInt(cEls.k.value, 10), words.length);
     const labels = kmeans(vecs, k);
     scene = { words, coords3, labels, k };
-    renderScene();
-    cStatus(`${words.length} words · ${k} clusters · drag to rotate`, "ready");
+    buildScene();
+    cStatus(`${words.length} words · ${k} clusters · drag, scroll to zoom`, "ready");
   } catch (err) {
     console.error(err);
     cStatus("Vector graph error: " + err.message, "error");
   } finally {
     busy = false;
-    if (pending) { pending = false; recompute(); }
+    cEls.btn.disabled = false;
   }
 }
 
-function schedule() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(recompute, DEBOUNCE_MS);
-}
-
-cEls.input.addEventListener("input", schedule);
-cEls.k.addEventListener("change", recompute);
-cStatus("Start typing — the vector graph builds live (first use downloads a ~25 MB model once).", null);
+cEls.btn.addEventListener("click", recompute);
+cEls.k.addEventListener("change", () => { if (scene) recompute(); });
+cStatus('Type some text above, then click "Generate vector graph" (first use downloads a ~25 MB model once).', null);

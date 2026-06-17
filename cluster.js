@@ -188,7 +188,7 @@ function svgEl(name, attrs) {
 function renderScene() {
   if (!scene) return;
   const { words, coords3, labels, k } = scene;
-  const W = 820, H = 580, pad = 56;
+  const W = 760, H = 360, pad = 40;
   const cx = W / 2, cy = H / 2;
 
   // Scale so the most distant point fits regardless of rotation.

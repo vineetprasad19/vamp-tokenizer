@@ -24,8 +24,6 @@ let pyTokenize = null;
 const loadedEncodings = new Set();
 let debounceTimer = null;
 
-const SAMPLE = "Hello world! Tokenizers turn text into the tokens a language model reads. Try editing me 🙂";
-
 function setStatus(msg, kind) {
   els.status.textContent = msg;
   els.status.className = "status" + (kind ? " " + kind : "");
@@ -60,7 +58,6 @@ async function boot() {
     setStatus("Ready — running entirely in your browser.", "ready");
     setTimeout(() => els.status.classList.add("hidden"), 2500);
 
-    els.input.value = SAMPLE;
     render();
     els.input.focus();
   } catch (err) {

@@ -1,19 +1,20 @@
 :root {
-  --bg: #f7f7f8;
-  --card: #ffffff;
-  --ink: #1f2328;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+  --bg: #0d1117;
+  --card: #161b22;
+  --ink: #e6edf3;
+  --muted: #8b949e;
+  --border: #30363d;
   --accent: #10a37f;
-  --accent-ink: #0d8a6a;
-  --tok-a: #d6f5ec;
-  --tok-b: #cfe8ff;
+  --accent-ink: #3fd3a6;
+  --tok-a: #16382d;
+  --tok-b: #16304a;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
+  color-scheme: dark;
   background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -39,7 +40,7 @@ header h1 {
 }
 
 code {
-  background: #eef0f2;
+  background: #21262d;
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 0.9em;
@@ -86,7 +87,8 @@ code {
 }
 
 #input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
-#input:disabled { background: #f0f1f3; }
+#input:disabled { background: #0b0f14; }
+#model option { background: var(--card); color: var(--ink); }
 
 .stats {
   display: flex;
@@ -148,19 +150,19 @@ code {
 .tok:nth-child(odd)  { background: var(--tok-a); }
 .tok:nth-child(even) { background: var(--tok-b); }
 /* make whitespace-only tokens visible */
-.tok.ws { outline: 1px dashed rgba(0,0,0,0.12); }
+.tok.ws { outline: 1px dashed rgba(255,255,255,0.18); }
 
 .status {
   margin-top: 18px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #9a3412;
+  background: #2d2410;
+  border: 1px solid #5c4a1a;
+  color: #f0c674;
   font-size: 0.9rem;
 }
-.status.ready { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
-.status.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.status.ready { background: #102a1f; border-color: #1d4d38; color: #56d364; }
+.status.error { background: #2d1416; border-color: #5c2326; color: #f87171; }
 .status.hidden { display: none; }
 
 footer {

@@ -252,6 +252,85 @@ code {
 .cluster-svg .pt text { pointer-events: none; }
 .cluster-svg .pt:hover circle { r: 7; }
 
+/* --- Explainer cards (collapsible) --- */
+.explain {
+  margin: 0 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-size: 0.82rem;
+}
+.explain > summary {
+  cursor: pointer;
+  padding: 7px 10px;
+  color: var(--accent-ink);
+  font-weight: 600;
+  list-style: none;
+}
+.explain > summary::before { content: "💡 "; }
+.explain[open] > summary { border-bottom: 1px solid var(--border); }
+.explain p {
+  margin: 0;
+  padding: 8px 10px 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* --- Context window meter --- */
+.ctx-controls { margin: 4px 0 8px; }
+.ctx-controls label { font-size: 0.85rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.ctx-controls select {
+  appearance: none;
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--ink); padding: 6px 10px; cursor: pointer;
+}
+.ctx-bar {
+  height: 16px; border-radius: 8px; background: var(--card);
+  border: 1px solid var(--border); overflow: hidden;
+}
+.ctx-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), #56d4dd);
+  transition: width 0.2s ease;
+}
+.ctx-fill.over { background: linear-gradient(90deg, #f0883e, #ff7b72); }
+.ctx-label { margin-top: 5px; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* --- Shared inputs for meaning + predict --- */
+.text-in {
+  width: 100%;
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--ink); padding: 9px 11px; font-size: 0.92rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.text-in:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+
+/* --- Meaning explorer --- */
+.meaning-grid { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.meaning-grid .text-in { flex: 1; min-width: 180px; }
+.sim-result:empty { display: none; }
+.sim-text { font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.sim-bar { height: 14px; border-radius: 7px; background: var(--card); border: 1px solid var(--border); overflow: hidden; }
+.sim-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff7b72, #f2cc60, #7ee787); }
+
+/* --- Next-token predictor --- */
+#predictInput { margin-bottom: 8px; resize: vertical; }
+.predict-result:empty { display: none; }
+.predict-result { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.pred-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 5px 10px; cursor: pointer; text-align: left; color: var(--ink);
+}
+.pred-row:hover { border-color: var(--accent); }
+.pred-tok {
+  min-width: 90px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem; color: #7ee787; white-space: pre;
+}
+.pred-bar { flex: 1; height: 12px; border-radius: 6px; background: #0d1117; overflow: hidden; }
+.pred-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #56d4dd); }
+.pred-pct { min-width: 52px; text-align: right; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 footer {
   margin-top: 18px;
   color: var(--muted);

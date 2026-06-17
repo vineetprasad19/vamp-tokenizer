@@ -23,7 +23,21 @@ const els = {
   tokens: document.getElementById("tokens"),
   ids: document.getElementById("ids"),
   status: document.getElementById("status"),
+  ctxModel: document.getElementById("ctxModel"),
+  ctxFill: document.getElementById("ctxFill"),
+  ctxLabel: document.getElementById("ctxLabel"),
 };
+
+// Representative context-window sizes for the meter.
+const CONTEXT_MODELS = [
+  { label: "GPT-4o / GPT-4.1 — 128K", limit: 128000 },
+  { label: "GPT-4 Turbo — 128K", limit: 128000 },
+  { label: "GPT-3.5 Turbo — 16K", limit: 16385 },
+  { label: "GPT-4 (original) — 8K", limit: 8192 },
+  { label: "Claude — 200K", limit: 200000 },
+];
+
+let lastTokenCount = 0;
 
 let pyodide = null;
 let pyInstallVocab = null;
@@ -43,6 +57,27 @@ for (const m of MODELS) {
   opt.textContent = m.label;
   els.model.appendChild(opt);
 }
+
+// Populate the context-window dropdown + meter.
+CONTEXT_MODELS.forEach((m, i) => {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = m.label;
+  els.ctxModel.appendChild(opt);
+});
+
+function updateContext() {
+  const m = CONTEXT_MODELS[parseInt(els.ctxModel.value, 10) || 0];
+  const pct = Math.min(100, (lastTokenCount / m.limit) * 100);
+  els.ctxFill.style.width = pct.toFixed(2) + "%";
+  els.ctxFill.classList.toggle("over", lastTokenCount > m.limit);
+  els.ctxLabel.textContent =
+    `${lastTokenCount.toLocaleString()} / ${m.limit.toLocaleString()} tokens` +
+    ` (${pct < 0.1 && lastTokenCount > 0 ? "<0.1" : pct.toFixed(1)}%)` +
+    (lastTokenCount > m.limit ? " — over the limit!" : "");
+}
+
+els.ctxModel.addEventListener("change", updateContext);
 
 async function boot() {
   try {
@@ -133,6 +168,8 @@ async function render() {
   }
 
   els.tokenCount.textContent = result.count.toLocaleString();
+  lastTokenCount = result.count;
+  updateContext();
   renderTokens(result.pieces);
   renderIds(result.ids);
 }

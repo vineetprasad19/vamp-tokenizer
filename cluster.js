@@ -4,8 +4,6 @@
 // each word's embedding is cached so typing only embeds new words. The model
 // loads automatically on first input (one-time ~25 MB download).
 
-const TRANSFORMERS_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.3";
-const MODEL = "Xenova/all-MiniLM-L6-v2";
 const MAX_WORDS = 200;
 
 const CLUSTER_COLORS = [
@@ -21,10 +19,6 @@ const cEls = {
   input: document.getElementById("input"),
   autoRotate: document.getElementById("autoRotate"),
 };
-
-let _extractor = null;             // cached model pipeline
-let _modelLoading = null;          // in-flight model load promise
-const _vecCache = new Map();       // word -> Float64Array(384)
 
 // Latest computed scene, kept so rotation/zoom re-projects without recomputing.
 let scene = null; // { words, coords3, labels, k }
@@ -48,37 +42,6 @@ function extractWords(text) {
     if (!seen.has(w)) { seen.add(w); out.push(w); }
   }
   return out.slice(0, MAX_WORDS);
-}
-
-// --- Model + embeddings (per-word cache) ----------------------------------
-async function getExtractor() {
-  if (_extractor) return _extractor;
-  if (_modelLoading) return _modelLoading;
-  _modelLoading = (async () => {
-    const { pipeline, env } = await import(TRANSFORMERS_URL);
-    env.allowLocalModels = false; // fetch the model from the Hugging Face hub
-    _extractor = await pipeline("feature-extraction", MODEL, {
-      progress_callback: (p) => {
-        if (p.status === "progress" && p.total) {
-          const pct = Math.round((p.loaded / p.total) * 100);
-          cStatus(`Downloading model… ${pct}% (one-time, then cached)`, "busy");
-        }
-      },
-    });
-    return _extractor;
-  })();
-  return _modelLoading;
-}
-
-async function embedWords(words) {
-  const missing = words.filter((w) => !_vecCache.has(w));
-  if (missing.length) {
-    const extractor = await getExtractor();
-    const output = await extractor(missing, { pooling: "mean", normalize: true });
-    const vecs = output.tolist(); // missing.length x 384
-    missing.forEach((w, i) => _vecCache.set(w, Float64Array.from(vecs[i])));
-  }
-  return words.map((w) => _vecCache.get(w));
 }
 
 // --- PCA to K dims (power iteration on the covariance) ---------------------
@@ -331,7 +294,8 @@ async function recompute() {
   busy = true;
   cEls.btn.disabled = true;
   try {
-    const vecs = await embedWords(words);
+    const vecs = await window.Embeddings.embed(words, (pct) =>
+      cStatus(`Downloading model… ${pct}% (one-time, then cached)`, "busy"));
     cStatus("Projecting & clustering…", "busy");
     await new Promise((r) => setTimeout(r, 0)); // let status paint
     const coords3 = pcaK(vecs, 3);

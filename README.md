@@ -23,9 +23,18 @@ Pages (static hosting).
 - **Vector Graph** — embed the unique words in your text with a small in-browser
   AI model ([Transformers.js](https://github.com/huggingface/transformers.js),
   `all-MiniLM-L6-v2`) and see them grouped by meaning in a rotatable **3D** X/Y/Z
-  scatter (PCA + k-means). It updates **live as you type** (each word is embedded
-  once and cached), and the model (~25 MB) downloads automatically on first use.
-  Drag the graph to rotate it.
+  scatter (PCA + k-means). Click *Generate*, then drag to rotate and scroll to
+  zoom; the model (~25 MB) downloads once on first use.
+- **Context window meter** — a bar showing how much of a model's context window
+  (8K / 16K / 128K / 200K) your current text would fill.
+- **Meaning explorer** — compare two phrases and get a semantic **similarity**
+  score (cosine of their embedding vectors).
+- **Next-token predictor** — runs `distilGPT-2` in the browser to show the top
+  predicted **next tokens** with probability bars; click one to generate. This is
+  the core idea of how LLMs write text.
+- **Concept explainer cards** — collapsible "💡 What is …?" notes throughout that
+  explain tokens, token IDs, embeddings, context windows, and generation in plain
+  language.
 
 ## How it works
 

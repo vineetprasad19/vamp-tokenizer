@@ -6,8 +6,6 @@
   --border: #30363d;
   --accent: #10a37f;
   --accent-ink: #3fd3a6;
-  --tok-a: #16382d;
-  --tok-b: #16304a;
 }
 
 * { box-sizing: border-box; }
@@ -142,16 +140,30 @@ code {
   overflow-wrap: anywhere;
 }
 
-.ids { margin: 0; color: var(--muted); }
+.ids {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
 .tok {
   border-radius: 3px;
-  padding: 0 1px;
+  padding: 0 2px;
+  color: #0d1117;          /* dark text on bright background */
+  font-weight: 600;
 }
-.tok:nth-child(odd)  { background: var(--tok-a); }
-.tok:nth-child(even) { background: var(--tok-b); }
-/* make whitespace-only tokens visible */
-.tok.ws { outline: 1px dashed rgba(255,255,255,0.18); }
+/* keep whitespace-only tokens visible */
+.tok.ws { outline: 1px dashed rgba(255,255,255,0.35); }
+
+.idchip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 5px;
+  color: #0d1117;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 
 .status {
   margin-top: 18px;

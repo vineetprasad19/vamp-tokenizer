@@ -7,6 +7,13 @@ const MODELS = [
   { id: "r50k_base", label: "GPT-3 (davinci, curie, babbage, ada)" },
 ];
 
+// Bright palette: token N and its token ID share TOKEN_COLORS[N % len] so you
+// can match a word to its ID by color.
+const TOKEN_COLORS = [
+  "#7ee787", "#79c0ff", "#ffa657", "#d2a8ff", "#ff7b72",
+  "#f2cc60", "#56d4dd", "#ff9bce", "#a5d6ff", "#e3b341",
+];
+
 const els = {
   model: document.getElementById("model"),
   input: document.getElementById("input"),
@@ -80,16 +87,28 @@ function countWords(text) {
 }
 
 function renderTokens(pieces) {
-  els.tokens.replaceChildren();
   const frag = document.createDocumentFragment();
-  for (const piece of pieces) {
+  pieces.forEach((piece, i) => {
     const span = document.createElement("span");
     span.className = "tok" + (/^\s+$/.test(piece) ? " ws" : "");
+    span.style.backgroundColor = TOKEN_COLORS[i % TOKEN_COLORS.length];
     // Show newlines/tabs as themselves inside pre-wrap; keep raw text otherwise.
     span.textContent = piece;
     frag.appendChild(span);
-  }
-  els.tokens.appendChild(frag);
+  });
+  els.tokens.replaceChildren(frag);
+}
+
+function renderIds(ids) {
+  const frag = document.createDocumentFragment();
+  ids.forEach((id, i) => {
+    const chip = document.createElement("span");
+    chip.className = "idchip";
+    chip.style.backgroundColor = TOKEN_COLORS[i % TOKEN_COLORS.length];
+    chip.textContent = id;
+    frag.appendChild(chip);
+  });
+  els.ids.replaceChildren(frag);
 }
 
 async function render() {
@@ -115,7 +134,7 @@ async function render() {
 
   els.tokenCount.textContent = result.count.toLocaleString();
   renderTokens(result.pieces);
-  els.ids.textContent = "[" + result.ids.join(", ") + "]";
+  renderIds(result.ids);
 }
 
 function scheduleRender() {

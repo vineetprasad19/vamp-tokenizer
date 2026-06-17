@@ -4,6 +4,8 @@ A tiny website that counts **OpenAI tokens** and **characters** in any text —
 like the [OpenAI tokenizer](https://platform.openai.com/tokenizer), but it runs
 **real Python in your browser**.
 
+https://vineetprasad19.github.io/vamp-tokenizer/
+
 It uses OpenAI's actual [`tiktoken`](https://github.com/openai/tiktoken) library
 compiled to WebAssembly via [Pyodide](https://pyodide.org). There is **no
 backend** — your text never leaves your device, so it works perfectly on GitHub

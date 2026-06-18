@@ -837,6 +837,43 @@
     // Always-accurate total: count the cards on the page.
     document.getElementById("qCount").textContent =
       document.querySelectorAll(".faq-card").length;
+
+    // Sticky "Jump to" bar: highlight the category in view and keep its pill
+    // scrolled into the (horizontally scrollable) bar.
+    (function () {
+      const toc = document.querySelector(".faq-toc");
+      if (!toc) return;
+      const links = Array.from(toc.querySelectorAll("a"));
+      const cats = links
+        .map((a) => document.getElementById(a.getAttribute("href").slice(1)))
+        .filter(Boolean);
+
+      function setActive(id) {
+        let active = null;
+        for (const a of links) {
+          const on = a.getAttribute("href").slice(1) === id;
+          a.classList.toggle("active", on);
+          if (on) active = a;
+        }
+        if (active) {
+          const r = active.getBoundingClientRect(), n = toc.getBoundingClientRect();
+          if (r.left < n.left || r.right > n.right) {
+            toc.scrollTo({ left: toc.scrollLeft + (r.left - n.left) - 16, behavior: "smooth" });
+          }
+        }
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          if (visible[0]) setActive(visible[0].target.id);
+        },
+        { rootMargin: "-100px 0px -55% 0px", threshold: 0 }
+      );
+      cats.forEach((c) => observer.observe(c));
+    })();
   </script>
 </body>
 </html>

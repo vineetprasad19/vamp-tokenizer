@@ -592,19 +592,35 @@ code {
 .qcount strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 
 .faq-toc {
-  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
-  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-  padding: 10px 12px; margin-bottom: 16px; font-size: 0.85rem;
+  position: sticky;
+  top: 43px; /* sits just under the main top nav, like the tool page */
+  z-index: 45;
+  display: flex; flex-wrap: nowrap; gap: 8px; align-items: center;
+  overflow-x: auto;
+  margin: 0 -18px 16px; /* bleed to the edges of .wrap */
+  padding: 8px 14px;
+  background: rgba(13, 17, 23, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
-.faq-toc strong { color: var(--ink); }
-.faq-toc a { color: var(--accent-ink); text-decoration: none; }
-.faq-toc a:hover { text-decoration: underline; }
+.faq-toc strong { color: var(--ink); flex: 0 0 auto; }
+.faq-toc a {
+  flex: 0 0 auto; white-space: nowrap;
+  color: var(--muted); text-decoration: none; font-weight: 600;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--card);
+}
+.faq-toc a:hover { color: var(--ink); border-color: var(--accent); }
+.faq-toc a.active { color: #06281e; background: var(--accent); border-color: var(--accent); }
 
 .faq-cat {
   font-size: 1.2rem; color: var(--ink);
   margin: 26px 0 4px; padding-top: 10px;
   border-top: 1px solid var(--border);
-  scroll-margin-top: 60px; /* offset the sticky top nav when jumping */
+  scroll-margin-top: 96px; /* clear both the top nav and the sticky toc when jumping */
 }
 
 .faq { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }

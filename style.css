@@ -483,6 +483,72 @@ code {
   background: rgba(63, 211, 166, calc(var(--w, 0) * 0.55 + 0.08));
 }
 
+/* --- Dot-product playground --- */
+.dot-stage { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 12px; }
+.dot-svg {
+  width: 320px; max-width: 100%; height: auto;
+  background: #0d1117; border: 1px solid var(--border); border-radius: 10px;
+  touch-action: none;
+}
+.dot-out { flex: 1; min-width: 200px; font-size: 1.05rem; color: var(--ink); line-height: 1.7; }
+.dot-out .dot-sub { font-size: 0.85rem; color: var(--muted); }
+
+/* --- Greedy vs sampling --- */
+.gen-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+@media (max-width: 560px) { .gen-cols { grid-template-columns: 1fr; } }
+.gen-col { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.gen-head { padding: 8px 12px; background: #0d1117; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--accent-ink); font-weight: 700; }
+.gen-text { padding: 12px; font-size: 0.95rem; line-height: 1.6; min-height: 80px; }
+.gen-text:empty::after { content: "—"; color: var(--muted); }
+.gen-prompt { color: var(--muted); }
+.gen-new { color: var(--accent-ink); font-weight: 600; }
+
+/* --- Training visualizer --- */
+.train-canvas {
+  width: 100%; height: auto; margin-top: 12px;
+  background: #0d1117; border: 1px solid var(--border); border-radius: 10px; display: block;
+}
+
+/* --- Cost calculator --- */
+.cost-inputs { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0; }
+.cost-inputs label { font-size: 0.85rem; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.cost-inputs input {
+  width: 120px; padding: 6px 8px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--card); color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.cost-inputs input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.cost-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+.cost-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.cost-table th, .cost-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.cost-table th { background: #0d1117; color: var(--muted); font-weight: 600; }
+.cost-table tr:last-child td { border-bottom: none; }
+.cost-num { text-align: right !important; font-variant-numeric: tabular-nums; }
+.cost-table tr.cost-claude { background: rgba(63, 211, 166, 0.07); }
+.cost-table tr.cost-claude td:first-child { color: var(--accent-ink); font-weight: 700; }
+.cost-mult { color: var(--muted); font-size: 0.75rem; margin-left: 6px; }
+.cost-approx { color: #f0883e; font-weight: 700; cursor: help; }
+
+/* --- Draw a digit --- */
+.digit-stage { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 12px; }
+.digit-pad {
+  width: 200px; height: 200px; background: #000;
+  border: 1px solid var(--border); border-radius: 10px;
+  cursor: crosshair; touch-action: none;
+}
+.digit-result { flex: 1; min-width: 180px; display: flex; align-items: center; gap: 16px; }
+.digit-result .metric-list { flex: 1; }
+.digit-big {
+  font-size: 4rem; font-weight: 800; line-height: 1;
+  color: var(--accent-ink); min-width: 60px; text-align: center;
+}
+
+/* --- Text-to-speech --- */
+#ttsVoice {
+  max-width: 240px; padding: 5px 8px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--card); color: var(--ink);
+}
+
 /* --- Learn page link + FAQ cards --- */
 .page-link {
   display: inline-block;

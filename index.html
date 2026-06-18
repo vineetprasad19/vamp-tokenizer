@@ -112,6 +112,32 @@
       <div id="compareResult" class="compare-result"></div>
     </section>
 
+    <section class="cost">
+      <h2 class="view-title">What does it cost? (Claude vs others)</h2>
+      <details class="explain">
+        <summary>How is using an AI model priced?</summary>
+        <p>You pay per <strong>token</strong> — separately for the tokens you send
+        in (the prompt) and the tokens it writes back (the response). Output usually
+        costs several times more than input. Enter rough token counts below and
+        compare the price of one call across popular models.</p>
+      </details>
+      <textarea id="costText" class="text-in" rows="2" spellcheck="false" placeholder="Optional: paste a prompt to estimate its input tokens (~4 chars per token)…"></textarea>
+      <div class="cost-inputs">
+        <label>Input tokens <input id="costIn" type="number" min="0" value="1000" /></label>
+        <label>Output tokens <input id="costOut" type="number" min="0" value="500" /></label>
+        <label>× Calls <input id="costCalls" type="number" min="1" value="1000" /></label>
+      </div>
+      <div class="cost-table-wrap">
+        <table class="cost-table">
+          <thead>
+            <tr><th>Model</th><th class="cost-num">In&nbsp;$/M</th><th class="cost-num">Out&nbsp;$/M</th><th class="cost-num">Per&nbsp;call</th><th class="cost-num">Total</th></tr>
+          </thead>
+          <tbody id="costBody"></tbody>
+        </table>
+      </div>
+      <p class="temp-hint">Claude prices are official Anthropic list prices. Rows marked <span class="cost-approx">≈</span> are approximate public prices for other providers (mid-2026) — edit them in <code>cost.js</code>. "$/M" = US dollars per million tokens.</p>
+    </section>
+
     <section class="cluster">
       <h2 class="view-title">Vector Graph</h2>
       <details class="explain">
@@ -176,6 +202,23 @@
       <p id="attnLegend" class="temp-hint attn-legend hidden">Click a word to see what it attends to. Thicker, brighter arcs = stronger attention. This is a simplified single-head self-attention — real transformers learn separate Query/Key projections for each of many heads.</p>
     </section>
 
+    <section class="dotprod">
+      <h2 class="view-title">Attention score (dot product)</h2>
+      <details class="explain">
+        <summary>How does one word "decide" how much to look at another?</summary>
+        <p>Each attention weight starts as a single number: the <strong>dot
+        product</strong> of one word's <em>query</em> vector with another word's
+        <em>key</em> vector. Vectors pointing the same way → big positive score →
+        strong attention. Perpendicular → ~0. Opposite → negative (actively
+        ignored). Drag the two arrows and watch the score change.</p>
+      </details>
+      <div class="dot-stage">
+        <svg id="dotSvg" class="dot-svg" viewBox="0 0 320 320"></svg>
+        <div id="dotOut" class="dot-out"></div>
+      </div>
+      <p class="temp-hint">Drag the <span style="color:#3fd3a6;font-weight:700">Query</span> and <span style="color:#56d4dd;font-weight:700">Key</span> arrows. The softmax then turns these raw scores into the attention weights you saw above.</p>
+    </section>
+
     <section class="predict">
       <h2 class="view-title">Next-token predictor</h2>
       <details class="explain">
@@ -206,6 +249,58 @@
       <div id="predictPool" class="num-cap"></div>
       <div id="predictStatus" class="cluster-status hidden"></div>
       <div id="predictResult" class="predict-result"></div>
+    </section>
+
+    <section class="gencompare">
+      <h2 class="view-title">Greedy vs. sampling</h2>
+      <details class="explain">
+        <summary>Why does the same AI give different answers each time?</summary>
+        <p>It depends on how it <em>picks</em> the next token. <strong>Greedy</strong>
+        always grabs the single most likely token — safe, but repetitive and always
+        identical. <strong>Sampling</strong> rolls the dice weighted by probability,
+        reshaped by <strong>temperature</strong> (higher = wilder). Run both on the
+        same prompt and compare.</p>
+      </details>
+      <textarea id="genInput" class="text-in" rows="2" spellcheck="false">Once upon a time, in a small village,</textarea>
+      <div class="predict-controls">
+        <button id="genBtn" class="btn" type="button">Generate both</button>
+        <label for="genTemp">Sampling temperature <span id="genTempVal">1.0</span>
+          <input type="range" id="genTemp" min="0.3" max="1.6" step="0.1" value="1" />
+        </label>
+      </div>
+      <div id="genStatus" class="cluster-status hidden"></div>
+      <div class="gen-cols">
+        <div class="gen-col">
+          <div class="gen-head">🥇 Greedy (always top token)</div>
+          <div id="genGreedy" class="gen-text"></div>
+        </div>
+        <div class="gen-col">
+          <div class="gen-head">🎲 Sampling (temperature)</div>
+          <div id="genSample" class="gen-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="train">
+      <h2 class="view-title">How training works (gradient descent)</h2>
+      <details class="explain">
+        <summary>How does a model actually "learn"?</summary>
+        <p>Learning = rolling downhill. The curve is the <strong>loss</strong> (how
+        wrong the model is); training nudges the parameters downhill by a small step
+        each time, set by the <strong>learning rate</strong>. Too small and it
+        crawls; too big and it overshoots the valley and <em>diverges</em>. Press
+        Run and try cranking the rate up.</p>
+      </details>
+      <canvas id="trainCanvas" class="train-canvas" width="760" height="240"></canvas>
+      <div class="predict-controls">
+        <label for="trainLr">Learning rate <span id="trainLrVal">0.30</span>
+          <input type="range" id="trainLr" min="0.02" max="1.4" step="0.02" value="0.3" />
+        </label>
+        <button id="trainStep" class="btn btn-alt" type="button">Step</button>
+        <button id="trainRun" class="btn" type="button">▶ Run</button>
+        <button id="trainReset" class="btn btn-alt" type="button">Reset</button>
+      </div>
+      <div id="trainOut" class="num-cap"></div>
     </section>
 
     <section class="rag">
@@ -261,6 +356,26 @@ Water boils at 100 degrees Celsius at sea level.</textarea>
       <div id="visResult" class="metric-list"></div>
     </section>
 
+    <section class="digit">
+      <h2 class="view-title">Draw a digit</h2>
+      <details class="explain">
+        <summary>Can a model read my handwriting?</summary>
+        <p>Doodle a number from 0–9 and a tiny neural network guesses it. Your
+        drawing is shrunk to a 28×28 grid of brightness numbers and fed to a model
+        trained on thousands of handwritten digits — the classic first experiment
+        in machine learning, running right in your browser.</p>
+      </details>
+      <div class="digit-stage">
+        <canvas id="digitPad" class="digit-pad" width="280" height="280"></canvas>
+        <div id="digitResult" class="digit-result"></div>
+      </div>
+      <div class="predict-buttons">
+        <button id="digitGuess" class="btn" type="button">Recognize digit</button>
+        <button id="digitClear" class="btn btn-alt" type="button">Clear</button>
+      </div>
+      <div id="digitStatus" class="cluster-status hidden"></div>
+    </section>
+
     <section class="speech">
       <h2 class="view-title">Speech-to-text (Whisper)</h2>
       <details class="explain">
@@ -274,6 +389,32 @@ Water boils at 100 degrees Celsius at sea level.</textarea>
       <canvas id="micWave" class="wave" width="760" height="90" hidden></canvas>
       <div id="micNumbers" class="num-viz"></div>
       <div id="micResult" class="mic-result"></div>
+    </section>
+
+    <section class="tts">
+      <h2 class="view-title">Text-to-speech</h2>
+      <details class="explain">
+        <summary>How does AI talk back?</summary>
+        <p>The reverse of speech-to-text: text tokens become a stream of sound.
+        This one uses your browser's own built-in voices (no download), but the idea
+        is the same in real AI voice assistants — turn words into an audio waveform.
+        Type something and press Speak.</p>
+      </details>
+      <textarea id="ttsInput" class="text-in" rows="2" spellcheck="false">Hello! I am a language model, and this is my voice.</textarea>
+      <div class="predict-controls">
+        <label for="ttsVoice">Voice <select id="ttsVoice"></select></label>
+        <label for="ttsRate">Speed <span id="ttsRateVal">1.0×</span>
+          <input type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1" />
+        </label>
+        <label for="ttsPitch">Pitch <span id="ttsPitchVal">1.0</span>
+          <input type="range" id="ttsPitch" min="0" max="2" step="0.1" value="1" />
+        </label>
+      </div>
+      <div class="predict-buttons">
+        <button id="ttsSpeak" class="btn" type="button">🔊 Speak</button>
+        <button id="ttsStop" class="btn btn-alt" type="button">Stop</button>
+      </div>
+      <div id="ttsStatus" class="cluster-status hidden"></div>
     </section>
 
     <div id="status" class="status">Loading Python &amp; the tokenizer…</div>
@@ -294,11 +435,18 @@ Water boils at 100 degrees Celsius at sea level.</textarea>
   <script src="embeddings.js"></script>
   <script src="cluster.js"></script>
   <script src="attention.js"></script>
+  <script src="dotprod.js"></script>
   <script src="compare.js"></script>
+  <script src="cost.js"></script>
+  <script src="gpt2.js"></script>
   <script src="predict.js"></script>
+  <script src="gencompare.js"></script>
+  <script src="training.js"></script>
   <script src="rag.js"></script>
   <script src="classify.js"></script>
   <script src="vision.js"></script>
+  <script src="digit.js"></script>
   <script src="speech.js"></script>
+  <script src="tts.js"></script>
 </body>
 </html>

@@ -41,21 +41,10 @@ function getTopP() { return parseFloat(pEls.topp.value) || 1; }     // 1 = off
 
 async function loadModel() {
   if (_model) return;
-  if (_loading) return _loading;
-  _loading = (async () => {
-    const { AutoTokenizer, AutoModelForCausalLM, env } = await import(PREDICT_URL);
-    env.allowLocalModels = false;
-    const opts = {
-      progress_callback: (p) => {
-        if (p.status === "progress" && p.total) {
-          pStatus(`Downloading model… ${Math.round((p.loaded / p.total) * 100)}% (one-time, then cached)`, "busy");
-        }
-      },
-    };
-    _tok = await AutoTokenizer.from_pretrained(PREDICT_MODEL, opts);
-    _model = await AutoModelForCausalLM.from_pretrained(PREDICT_MODEL, opts);
-  })();
-  return _loading;
+  const { tok, model } = await GPT2.load((pct) =>
+    pStatus(`Downloading model… ${pct}% (one-time, then cached)`, "busy"));
+  _tok = tok;
+  _model = model;
 }
 
 // Temperature-scaled softmax probabilities (Float64Array) over all logits.

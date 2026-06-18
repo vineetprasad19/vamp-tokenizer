@@ -24,7 +24,26 @@
       </p>
     </header>
 
+    <nav class="faq-toc">
+      <strong>Jump to:</strong>
+      <a href="#basics">Basics</a>
+      <a href="#arch">Architecture</a>
+      <a href="#attn">Attention</a>
+      <a href="#tok">Tokenization</a>
+      <a href="#pretrain">Pretraining</a>
+      <a href="#align">Alignment &amp; fine-tuning</a>
+      <a href="#decode">Decoding</a>
+      <a href="#systems">Inference &amp; systems</a>
+      <a href="#scaling">Scaling</a>
+      <a href="#eval">Evaluation</a>
+      <a href="#rag">RAG</a>
+      <a href="#agents">Agents</a>
+      <a href="#safety">Safety &amp; interpretability</a>
+    </nav>
+
     <section class="faq">
+
+      <h2 class="faq-cat" id="basics">🟢 Basics — start here</h2>
 
       <article class="faq-card">
         <h2>🤖 What is an LLM?</h2>
@@ -151,6 +170,553 @@
         <p class="real">🌍 Real life: like a parrot that learned to say clever-sounding
         sentences — impressive, but it isn't a person.</p>
       </article>
+
+      <h2 class="faq-cat" id="arch">🧠 Transformer architecture</h2>
+
+      <article class="faq-card"><h2>What is the Transformer architecture?</h2>
+        <p>A neural network built from stacked blocks, each containing an attention
+        layer and a feed-forward layer, connected by residual links. It processes a
+        whole sequence in parallel and uses attention to mix information between
+        positions. It replaced RNNs/LSTMs (2017, "Attention Is All You Need").</p></article>
+
+      <article class="faq-card"><h2>What is self-attention?</h2>
+        <p>A mechanism where every token looks at every other token and decides how
+        much to "pay attention" to each, then blends their information accordingly.
+        It's how a model resolves what "it" refers to, or links a verb to its
+        subject.</p></article>
+
+      <article class="faq-card"><h2>What are queries, keys, and values (Q, K, V)?</h2>
+        <p>Each token is projected into three vectors. A token's <em>query</em> is
+        matched against every other token's <em>key</em> (dot product) to get
+        attention weights; those weights then combine the <em>values</em>. Think:
+        query = "what I'm looking for", key = "what I offer", value = "what I pass
+        on".</p></article>
+
+      <article class="faq-card"><h2>What is multi-head attention?</h2>
+        <p>Attention is run several times in parallel with different learned
+        projections ("heads"), each able to focus on a different kind of
+        relationship (syntax, coreference, position…). Their outputs are
+        concatenated and mixed.</p></article>
+
+      <article class="faq-card"><h2>What is the feed-forward (MLP) layer in a block?</h2>
+        <p>After attention mixes tokens, a per-token two-layer MLP (often 4× wider
+        than the model dimension) transforms each position independently. This is
+        where much of the model's "knowledge" is stored.</p></article>
+
+      <article class="faq-card"><h2>What are residual connections?</h2>
+        <p>Each sub-layer adds its output to its input (x + f(x)) instead of
+        replacing it. This keeps gradients flowing through very deep networks and
+        forms the "residual stream" that information travels along.</p></article>
+
+      <article class="faq-card"><h2>What is layer normalization (and Pre-LN vs Post-LN)?</h2>
+        <p>LayerNorm rescales a vector to stable statistics so training doesn't blow
+        up. Modern LLMs use <em>Pre-LN</em> (normalize before each sub-layer), which
+        trains more stably than the original Post-LN. RMSNorm is a common cheaper
+        variant.</p></article>
+
+      <article class="faq-card"><h2>What is positional encoding (absolute vs RoPE)?</h2>
+        <p>Attention has no built-in sense of order, so position info is injected.
+        Early models added fixed/learned absolute position vectors; most modern LLMs
+        use <strong>RoPE</strong> (rotary embeddings), which rotates Q/K by angle
+        proportional to position and generalizes better to longer contexts.</p></article>
+
+      <article class="faq-card"><h2>Decoder-only vs encoder-decoder vs encoder-only?</h2>
+        <p><strong>Decoder-only</strong> (GPT, Llama): predicts next token, best for
+        generation. <strong>Encoder-only</strong> (BERT): reads bidirectionally,
+        best for classification/embeddings. <strong>Encoder-decoder</strong> (T5):
+        reads input then generates, good for translation/summarization.</p></article>
+
+      <article class="faq-card"><h2>What is causal (masked) attention?</h2>
+        <p>In a generator, each token may only attend to earlier tokens, never future
+        ones — enforced by masking. This lets the model be trained on all positions
+        at once while still learning to predict left-to-right.</p></article>
+
+      <article class="faq-card"><h2>What is the "residual stream"?</h2>
+        <p>The running vector at each position that every layer reads from and writes
+        back to via residual connections. Interpretability research treats it as a
+        shared communication channel between components.</p></article>
+
+      <article class="faq-card"><h2>How big are typical LLMs (layers/heads/dims)?</h2>
+        <p>A 7B model might have ~32 layers, ~32 heads, hidden size ~4096. Bigger
+        models scale all three. "Parameters" counts all the weights across these
+        layers (billions to trillions).</p></article>
+
+      <h2 class="faq-cat" id="attn">🔬 Attention deep dive</h2>
+
+      <article class="faq-card"><h2>Why divide attention scores by √d<sub>k</sub>?</h2>
+        <p>Dot products grow with dimension, pushing softmax into tiny-gradient
+        regions. Scaling by the square root of the key dimension keeps the scores at
+        a sane magnitude so training stays stable.</p></article>
+
+      <article class="faq-card"><h2>Why is attention O(n²)?</h2>
+        <p>Every token attends to every other token, so cost and memory grow with the
+        square of sequence length n. Doubling context roughly quadruples attention
+        compute — the main barrier to long contexts.</p></article>
+
+      <article class="faq-card"><h2>What is FlashAttention?</h2>
+        <p>An exact attention algorithm that computes results in tiles without
+        materializing the full n×n matrix in memory, using GPU SRAM cleverly. Same
+        math, much faster and far less memory.</p></article>
+
+      <article class="faq-card"><h2>What is the KV cache?</h2>
+        <p>During generation, the keys and values of past tokens are saved so each
+        new token doesn't recompute them. It makes generation fast but its memory
+        grows with sequence length × layers — often the real context-length limit.</p></article>
+
+      <article class="faq-card"><h2>What are MQA and GQA?</h2>
+        <p>Multi-Query Attention shares one set of K/V across all heads;
+        Grouped-Query Attention shares K/V among groups of heads. Both shrink the KV
+        cache dramatically, speeding up inference with little quality loss.</p></article>
+
+      <article class="faq-card"><h2>What is sliding-window / local attention?</h2>
+        <p>Each token only attends to a fixed window of nearby tokens instead of the
+        whole sequence, cutting cost to linear. Used in models like Mistral to handle
+        longer inputs cheaply.</p></article>
+
+      <article class="faq-card"><h2>What is sparse attention?</h2>
+        <p>Attention restricted to a chosen subset of token pairs (strided, block,
+        global) rather than all pairs, trading some expressiveness for much lower
+        cost on long sequences.</p></article>
+
+      <article class="faq-card"><h2>What is ALiBi?</h2>
+        <p>Attention with Linear Biases adds a distance-based penalty to attention
+        scores instead of using positional embeddings, helping models extrapolate to
+        longer sequences than they trained on.</p></article>
+
+      <article class="faq-card"><h2>How do long-context (100k–1M token) models work?</h2>
+        <p>Combinations of RoPE scaling (e.g., position interpolation/YaRN), efficient
+        attention (Flash/GQA), and lots of memory. Quality often degrades in the
+        middle of very long contexts ("lost in the middle").</p></article>
+
+      <article class="faq-card"><h2>What are attention sinks?</h2>
+        <p>Models tend to dump excess attention onto the first few tokens. Keeping
+        those "sink" tokens in the KV cache lets streaming/long-context inference stay
+        stable when older tokens are evicted.</p></article>
+
+      <h2 class="faq-cat" id="tok">🔡 Tokenization &amp; embeddings (advanced)</h2>
+
+      <article class="faq-card"><h2>What is byte-pair encoding (BPE)?</h2>
+        <p>A tokenizer trained by repeatedly merging the most frequent adjacent
+        symbol pair into a new token. It balances vocabulary size against sequence
+        length, and handles unknown words by falling back to smaller pieces.</p></article>
+
+      <article class="faq-card"><h2>BPE vs WordPiece vs Unigram vs SentencePiece?</h2>
+        <p>WordPiece (BERT) merges by likelihood gain; Unigram (T5) prunes a large
+        vocab by probability; SentencePiece is a library that trains BPE/Unigram
+        directly on raw text (no pre-tokenization), great for many languages.</p></article>
+
+      <article class="faq-card"><h2>What is byte-level BPE?</h2>
+        <p>BPE applied over raw bytes (256 base symbols) instead of characters, so it
+        can represent <em>any</em> text — emoji, code, every language — with no
+        out-of-vocabulary problem. Used by GPT-2 onward.</p></article>
+
+      <article class="faq-card"><h2>Why does tokenization penalize non-English text?</h2>
+        <p>Tokenizers learn merges mostly from English-heavy data, so other scripts
+        get split into many small tokens. The same sentence can cost 2–5× more tokens
+        (and money, and context) in some languages — a real fairness issue.</p></article>
+
+      <article class="faq-card"><h2>What are tied embeddings and the LM head?</h2>
+        <p>The input embedding matrix maps token IDs → vectors; the LM head
+        (unembedding) maps the final vector → a score for every token. Many models
+        <em>tie</em> these (share the same matrix) to save parameters.</p></article>
+
+      <article class="faq-card"><h2>Static vs contextual embeddings?</h2>
+        <p>Static (word2vec/GloVe) give one fixed vector per word. Contextual
+        (transformer) give a different vector depending on surrounding words, so
+        "bank" by a river differs from "bank" with money.</p></article>
+
+      <article class="faq-card"><h2>What are "glitch tokens"?</h2>
+        <p>Rare tokens (like the infamous "SolidGoldMagikarp") that appeared in the
+        tokenizer's training data but barely in the model's, causing bizarre,
+        unstable behavior when used. A quirk of mismatched tokenizer/model data.</p></article>
+
+      <article class="faq-card"><h2>What is the vocabulary size and why does it matter?</h2>
+        <p>The number of distinct tokens (e.g., ~50K for GPT-2, ~100K–200K for newer
+        models). Bigger vocab = shorter sequences but a larger embedding/output layer
+        and rarer tokens seen less during training.</p></article>
+
+      <h2 class="faq-cat" id="pretrain">🏋️ Pretraining</h2>
+
+      <article class="faq-card"><h2>What is the next-token prediction objective?</h2>
+        <p>The model is trained to predict token t+1 from tokens 1…t. This single
+        self-supervised task, at scale, teaches grammar, facts, reasoning patterns,
+        and style — all without human labels.</p></article>
+
+      <article class="faq-card"><h2>What is cross-entropy / negative log-likelihood loss?</h2>
+        <p>The training loss is the negative log of the probability the model assigned
+        to the correct next token, averaged over all tokens. Minimizing it means
+        making the right token more probable.</p></article>
+
+      <article class="faq-card"><h2>What is teacher forcing?</h2>
+        <p>During training the model is always fed the true previous tokens (not its
+        own guesses), so every position can be learned in parallel. At inference it
+        instead feeds back its own outputs.</p></article>
+
+      <article class="faq-card"><h2>What data are LLMs trained on?</h2>
+        <p>Web crawls (Common Crawl), books, code (GitHub), Wikipedia, papers, and
+        more — cleaned, filtered, and deduplicated. Data quality and mixture matter
+        as much as quantity.</p></article>
+
+      <article class="faq-card"><h2>What are scaling laws / Chinchilla-optimal training?</h2>
+        <p>Loss falls predictably as a power law in model size, data, and compute.
+        Chinchilla showed many models were undertrained: for a compute budget, you
+        should scale data roughly in proportion to parameters (~20 tokens/param).</p></article>
+
+      <article class="faq-card"><h2>What is a learning-rate schedule (warmup + decay)?</h2>
+        <p>LR starts near zero and ramps up (warmup) to avoid early instability, then
+        decays (often cosine) toward zero so the model settles into a good minimum.</p></article>
+
+      <article class="faq-card"><h2>What is AdamW?</h2>
+        <p>The standard optimizer for LLMs: Adam (adaptive per-parameter step sizes
+        using gradient moments) with decoupled weight decay for better
+        regularization.</p></article>
+
+      <article class="faq-card"><h2>What is mixed-precision training (fp16/bf16)?</h2>
+        <p>Storing/computing in 16-bit floats to halve memory and speed up math, while
+        keeping critical parts in higher precision. <em>bf16</em> trades mantissa bits
+        for range and is now standard on modern accelerators.</p></article>
+
+      <article class="faq-card"><h2>What is gradient clipping?</h2>
+        <p>Capping the size of gradients before an update so occasional huge gradients
+        don't destabilize or blow up training.</p></article>
+
+      <article class="faq-card"><h2>Why does data deduplication matter?</h2>
+        <p>Duplicate text makes models memorize and waste capacity, and inflates
+        evaluation if test data leaks in. Dedup improves quality and reduces
+        regurgitation.</p></article>
+
+      <article class="faq-card"><h2>What is curriculum / data-mixture scheduling?</h2>
+        <p>Ordering or reweighting data during training (e.g., more code or
+        high-quality text later) to shape capabilities. Mixture choices strongly
+        affect the final model's strengths.</p></article>
+
+      <h2 class="faq-cat" id="align">🎯 Alignment &amp; fine-tuning</h2>
+
+      <article class="faq-card"><h2>What is supervised fine-tuning (SFT)?</h2>
+        <p>After pretraining, the model is trained on curated prompt→response examples
+        so it learns to follow instructions and answer in a helpful format.</p></article>
+
+      <article class="faq-card"><h2>What is RLHF?</h2>
+        <p>Reinforcement Learning from Human Feedback: humans rank model outputs, a
+        reward model learns those preferences, and the LLM is optimized to score
+        higher — making it more helpful, honest, and harmless.</p></article>
+
+      <article class="faq-card"><h2>What is a reward model?</h2>
+        <p>A model trained on human preference comparisons to output a scalar "how good
+        is this response" score, used as the optimization target during RLHF.</p></article>
+
+      <article class="faq-card"><h2>What is PPO in RLHF?</h2>
+        <p>Proximal Policy Optimization, the RL algorithm often used to update the LLM
+        against the reward model while a KL penalty keeps it from drifting too far
+        from the original model.</p></article>
+
+      <article class="faq-card"><h2>What is DPO (Direct Preference Optimization)?</h2>
+        <p>A simpler alternative to RLHF that optimizes directly on preference pairs
+        with a classification-style loss — no separate reward model or RL loop —
+        often matching PPO with less complexity.</p></article>
+
+      <article class="faq-card"><h2>What is RLAIF / Constitutional AI?</h2>
+        <p>Using AI feedback instead of (or alongside) human feedback: a model critiques
+        and revises outputs against a set of written principles ("constitution") to
+        align behavior at scale.</p></article>
+
+      <article class="faq-card"><h2>What is instruction tuning?</h2>
+        <p>Fine-tuning on many diverse tasks phrased as instructions so the model
+        generalizes to following new instructions it never explicitly saw.</p></article>
+
+      <article class="faq-card"><h2>What is LoRA?</h2>
+        <p>Low-Rank Adaptation: freeze the big model and train tiny low-rank "adapter"
+        matrices added to some weights. You fine-tune &lt;1% of parameters, cheaply and
+        swappably.</p></article>
+
+      <article class="faq-card"><h2>What is QLoRA?</h2>
+        <p>LoRA on top of a 4-bit quantized base model, letting you fine-tune large
+        models on a single consumer GPU with minimal quality loss.</p></article>
+
+      <article class="faq-card"><h2>What is PEFT?</h2>
+        <p>Parameter-Efficient Fine-Tuning — the family of methods (LoRA, adapters,
+        prefix/prompt tuning) that adapt a model by training a small number of extra
+        parameters instead of all of them.</p></article>
+
+      <article class="faq-card"><h2>What is catastrophic forgetting?</h2>
+        <p>When fine-tuning on new data makes a model lose previously learned
+        abilities. PEFT, replay of old data, and careful learning rates help mitigate
+        it.</p></article>
+
+      <article class="faq-card"><h2>What is the "alignment tax"?</h2>
+        <p>The small capability cost sometimes paid when aligning a model for safety
+        and helpfulness — e.g., it may refuse more or score slightly lower on raw
+        benchmarks.</p></article>
+
+      <h2 class="faq-cat" id="decode">🎲 Decoding &amp; sampling</h2>
+
+      <article class="faq-card"><h2>What is greedy decoding?</h2>
+        <p>Always pick the single highest-probability next token. Fast and
+        deterministic, but can be repetitive and get stuck in loops.</p></article>
+
+      <article class="faq-card"><h2>What is beam search?</h2>
+        <p>Keep the top-N partial sequences ("beams") at each step and expand them,
+        choosing the most probable overall sequence. Good for translation; tends to be
+        bland for open-ended text.</p></article>
+
+      <article class="faq-card"><h2>What does temperature do (technically)?</h2>
+        <p>It divides the logits before softmax. &lt;1 sharpens the distribution
+        (more confident/deterministic); &gt;1 flattens it (more diverse/random);
+        →0 approaches greedy.</p></article>
+
+      <article class="faq-card"><h2>What is top-k sampling?</h2>
+        <p>Keep only the k most probable tokens, renormalize, and sample from those.
+        Prevents picking absurd low-probability tokens while keeping some variety.</p></article>
+
+      <article class="faq-card"><h2>What is top-p (nucleus) sampling?</h2>
+        <p>Keep the smallest set of top tokens whose probabilities sum to p (e.g.,
+        0.9), then sample. The candidate pool size adapts to how confident the model
+        is.</p></article>
+
+      <article class="faq-card"><h2>What are repetition / frequency / presence penalties?</h2>
+        <p>Adjustments that lower the probability of tokens already used, discouraging
+        the model from repeating itself or looping.</p></article>
+
+      <article class="faq-card"><h2>What is min-p sampling?</h2>
+        <p>Keep tokens whose probability is at least a fraction of the top token's
+        probability. A newer scheme that adapts better than fixed top-k/top-p across
+        confidence levels.</p></article>
+
+      <article class="faq-card"><h2>What is constrained decoding (JSON/grammar mode)?</h2>
+        <p>Restricting the next-token choices to only those allowed by a grammar or
+        schema, guaranteeing valid JSON or other structured output.</p></article>
+
+      <article class="faq-card"><h2>What is speculative decoding?</h2>
+        <p>A small "draft" model proposes several tokens which the big model verifies in
+        one pass, accepting the ones it agrees with. Same output distribution, often
+        2–3× faster.</p></article>
+
+      <h2 class="faq-cat" id="systems">⚙️ Inference &amp; systems</h2>
+
+      <article class="faq-card"><h2>What is quantization (int8/int4)?</h2>
+        <p>Storing weights (and sometimes activations) in fewer bits to shrink memory
+        and speed up inference, with small accuracy loss. Enables big models on small
+        hardware.</p></article>
+
+      <article class="faq-card"><h2>What are GPTQ and AWQ?</h2>
+        <p>Post-training quantization methods that pick low-bit weight values to
+        minimize error (GPTQ) or protect the most important weights (AWQ), preserving
+        quality at 4-bit.</p></article>
+
+      <article class="faq-card"><h2>What is the prefill vs decode phase?</h2>
+        <p>Prefill processes the whole prompt in parallel (compute-bound); decode then
+        generates one token at a time (memory-bandwidth-bound). They have very
+        different performance characteristics.</p></article>
+
+      <article class="faq-card"><h2>What is continuous batching?</h2>
+        <p>An inference-server technique that adds and removes requests from a running
+        batch token-by-token, keeping the GPU busy and boosting throughput vs static
+        batching.</p></article>
+
+      <article class="faq-card"><h2>What is PagedAttention / vLLM?</h2>
+        <p>vLLM's method of managing the KV cache in non-contiguous "pages" (like OS
+        virtual memory), reducing fragmentation and enabling far higher concurrency.</p></article>
+
+      <article class="faq-card"><h2>What is model parallelism (tensor / pipeline)?</h2>
+        <p>Splitting a model that's too big for one GPU: <em>tensor</em> parallelism
+        splits individual layers across GPUs; <em>pipeline</em> parallelism puts
+        different layers on different GPUs.</p></article>
+
+      <article class="faq-card"><h2>What are ZeRO / FSDP?</h2>
+        <p>Techniques that shard optimizer states, gradients, and parameters across
+        many GPUs so huge models can be trained without each GPU holding a full copy.</p></article>
+
+      <article class="faq-card"><h2>What is a Mixture of Experts (MoE)?</h2>
+        <p>A model with many "expert" feed-forward blocks where a router sends each
+        token to only a few. You get a huge parameter count but only activate a
+        fraction per token — more capacity at similar compute.</p></article>
+
+      <article class="faq-card"><h2>What is knowledge distillation?</h2>
+        <p>Training a smaller "student" model to imitate a larger "teacher" (its outputs
+        or probabilities), getting much of the quality at a fraction of the size.</p></article>
+
+      <article class="faq-card"><h2>Why does KV-cache memory limit context length?</h2>
+        <p>Each token stores keys/values for every layer and head; memory grows
+        linearly with context length. Long contexts can need more memory for the cache
+        than for the model weights.</p></article>
+
+      <h2 class="faq-cat" id="scaling">📈 Scaling &amp; emergence</h2>
+
+      <article class="faq-card"><h2>What are scaling laws?</h2>
+        <p>Empirical power-law relationships showing loss decreases smoothly as model
+        size, data, and compute grow — letting labs predict a big model's performance
+        before training it.</p></article>
+
+      <article class="faq-card"><h2>What are emergent abilities?</h2>
+        <p>Skills (multi-step arithmetic, certain reasoning) that appear fairly
+        suddenly above a model-size threshold. Their "sharpness" is debated and partly
+        depends on how you measure them.</p></article>
+
+      <article class="faq-card"><h2>What is in-context learning?</h2>
+        <p>The ability to learn a task from examples placed in the prompt, with no
+        weight updates. Few-shot prompting works because of this emergent behavior.</p></article>
+
+      <article class="faq-card"><h2>What is grokking?</h2>
+        <p>A phenomenon where a model trains to memorize, then much later suddenly
+        generalizes (validation accuracy jumps long after training accuracy
+        saturates).</p></article>
+
+      <article class="faq-card"><h2>What is the "bitter lesson"?</h2>
+        <p>Rich Sutton's observation that general methods which scale with compute and
+        data tend to beat hand-crafted, knowledge-engineered approaches over time.</p></article>
+
+      <article class="faq-card"><h2>What is test-time compute / reasoning models?</h2>
+        <p>Letting a model "think" longer at inference (long chains of thought,
+        search, self-checking) trades extra compute for better answers — the idea
+        behind o1/o3-style reasoning models.</p></article>
+
+      <h2 class="faq-cat" id="eval">📊 Evaluation</h2>
+
+      <article class="faq-card"><h2>How are LLMs benchmarked (MMLU, etc.)?</h2>
+        <p>Standardized test sets across subjects and skills — MMLU (knowledge),
+        GSM8K (math), HumanEval (code), and many more — reported as accuracy or
+        pass rates.</p></article>
+
+      <article class="faq-card"><h2>What is perplexity?</h2>
+        <p>The exponential of the average per-token loss — roughly "how many tokens the
+        model is choosing between" on average. Lower = the model is less surprised by
+        the text.</p></article>
+
+      <article class="faq-card"><h2>What is LLM-as-a-judge?</h2>
+        <p>Using a strong LLM to score or compare other models' outputs. Scalable and
+        cheap, but can be biased (e.g., toward length or its own style) and needs
+        careful design.</p></article>
+
+      <article class="faq-card"><h2>What is benchmark contamination?</h2>
+        <p>When test questions leak into training data, inflating scores. It's a major
+        reason public benchmark numbers can overstate real ability.</p></article>
+
+      <article class="faq-card"><h2>What is pass@k?</h2>
+        <p>A code-eval metric: the chance that at least one of k sampled solutions
+        passes the tests. Rewards models that can produce a correct answer within a
+        few tries.</p></article>
+
+      <article class="faq-card"><h2>Capability vs alignment evaluations?</h2>
+        <p>Capability evals measure what a model <em>can</em> do; alignment/safety
+        evals measure whether it behaves as intended (refusing harm, honesty,
+        robustness to jailbreaks).</p></article>
+
+      <h2 class="faq-cat" id="rag">🔎 RAG &amp; retrieval (advanced)</h2>
+
+      <article class="faq-card"><h2>What is a vector database?</h2>
+        <p>A store optimized to hold embeddings and find the nearest ones to a query
+        vector quickly (Pinecone, Weaviate, FAISS, pgvector). The backbone of semantic
+        search and RAG.</p></article>
+
+      <article class="faq-card"><h2>What is approximate nearest neighbor (ANN / HNSW)?</h2>
+        <p>Algorithms that find <em>close-enough</em> nearest vectors far faster than
+        exact search. HNSW builds a navigable graph for fast, high-recall lookups over
+        millions of vectors.</p></article>
+
+      <article class="faq-card"><h2>What is chunking and why does it matter?</h2>
+        <p>Splitting documents into passages before embedding. Chunk size/overlap
+        strongly affect retrieval quality — too big dilutes meaning, too small loses
+        context.</p></article>
+
+      <article class="faq-card"><h2>What is re-ranking?</h2>
+        <p>A second, more accurate model (often a cross-encoder) re-orders the top
+        retrieved candidates for relevance, improving what the LLM finally reads.</p></article>
+
+      <article class="faq-card"><h2>What is hybrid search?</h2>
+        <p>Combining keyword search (BM25) with dense vector search to get both exact
+        term matches and semantic matches, usually beating either alone.</p></article>
+
+      <article class="faq-card"><h2>What are common RAG failure modes?</h2>
+        <p>Retrieving irrelevant or missing chunks, contradictory sources, the answer
+        spanning multiple chunks, and the LLM ignoring or over-trusting retrieved
+        text. Good chunking, re-ranking, and citations help.</p></article>
+
+      <h2 class="faq-cat" id="agents">🤖 Agents &amp; tool use</h2>
+
+      <article class="faq-card"><h2>What is function calling / tool use?</h2>
+        <p>The model is given tool/function definitions and can output a structured
+        call (name + arguments); your code runs it and returns the result, letting the
+        model use calculators, search, APIs, etc.</p></article>
+
+      <article class="faq-card"><h2>What is chain-of-thought (CoT) prompting?</h2>
+        <p>Asking the model to reason step by step before answering, which improves
+        accuracy on multi-step problems by letting it "show its work".</p></article>
+
+      <article class="faq-card"><h2>What is ReAct?</h2>
+        <p>A loop of <em>Reason</em> then <em>Act</em>: the model thinks, calls a tool,
+        observes the result, and repeats — the basis of many agent frameworks.</p></article>
+
+      <article class="faq-card"><h2>What is an AI agent?</h2>
+        <p>An LLM that plans and takes multiple actions toward a goal — calling tools,
+        reading results, and deciding next steps — rather than answering in one shot.</p></article>
+
+      <article class="faq-card"><h2>What is the Model Context Protocol (MCP)?</h2>
+        <p>An open standard for connecting AI apps to external tools and data sources
+        through a common interface, so any model can use any MCP-compatible tool/server.</p></article>
+
+      <article class="faq-card"><h2>What is multi-agent orchestration?</h2>
+        <p>Multiple specialized agents (planner, coder, reviewer…) collaborating or
+        running in parallel, coordinated by a controller — useful for complex tasks but
+        harder to keep reliable.</p></article>
+
+      <h2 class="faq-cat" id="safety">🛡️ Safety, limits &amp; interpretability</h2>
+
+      <article class="faq-card"><h2>Why do LLMs hallucinate (technical)?</h2>
+        <p>They optimize next-token likelihood, not truth. With no grounding and
+        pressure to always answer, a plausible-but-wrong continuation can be the most
+        probable one. Retrieval, calibration, and abstention reduce it.</p></article>
+
+      <article class="faq-card"><h2>What is prompt injection?</h2>
+        <p>Malicious instructions hidden in content the model reads (a web page, a
+        document) that hijack its behavior. A top security risk for agents and RAG
+        systems.</p></article>
+
+      <article class="faq-card"><h2>What is jailbreaking?</h2>
+        <p>Crafting prompts that bypass a model's safety training to get disallowed
+        output. An ongoing cat-and-mouse between attackers and alignment methods.</p></article>
+
+      <article class="faq-card"><h2>What is mechanistic interpretability?</h2>
+        <p>Reverse-engineering the internal computations of a model — circuits,
+        features, and how components combine — to understand <em>why</em> it produces
+        an output.</p></article>
+
+      <article class="faq-card"><h2>What are superposition and polysemanticity?</h2>
+        <p>Models pack more features than they have neurons by overlapping them, so a
+        single neuron can respond to many unrelated concepts (polysemantic), making
+        interpretation hard.</p></article>
+
+      <article class="faq-card"><h2>What is a sparse autoencoder (SAE) in interpretability?</h2>
+        <p>A tool that decomposes a model's activations into many sparse, more
+        human-interpretable "features", helping untangle superposition.</p></article>
+
+      <article class="faq-card"><h2>What is reward hacking?</h2>
+        <p>When a model finds ways to score high on the reward/metric without actually
+        doing the intended task — e.g., being sycophantic or verbose because raters
+        liked that.</p></article>
+
+      <article class="faq-card"><h2>What is sycophancy?</h2>
+        <p>A model tending to agree with or flatter the user rather than be accurate,
+        often a side effect of human-preference training.</p></article>
+
+      <article class="faq-card"><h2>What is memorization / data leakage?</h2>
+        <p>Large models can reproduce verbatim chunks of training data, raising privacy
+        and copyright concerns. Deduplication and filtering reduce but don't eliminate
+        it.</p></article>
+
+      <article class="faq-card"><h2>Where does bias in LLMs come from?</h2>
+        <p>Mostly from biased training data (and labeling choices), which the model
+        reflects and can amplify. Mitigations include data curation, alignment, and
+        evaluation for fairness.</p></article>
+
+      <article class="faq-card"><h2>What is the difference between alignment and capability?</h2>
+        <p>Capability is how powerful/skilled a model is; alignment is whether it
+        reliably does what we want and avoids harm. A model can be highly capable yet
+        poorly aligned, or vice versa.</p></article>
+
+      <article class="faq-card"><h2>What is calibration?</h2>
+        <p>Whether a model's stated/implied confidence matches reality (90% confident →
+        right 90% of the time). Alignment training can hurt calibration, making models
+        overconfident.</p></article>
 
     </section>
 

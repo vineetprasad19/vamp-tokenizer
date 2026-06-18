@@ -447,6 +447,22 @@ code {
 .back-link { display: inline-block; margin-bottom: 10px; color: var(--accent-ink); font-size: 0.9rem; text-decoration: none; }
 .back-link:hover { text-decoration: underline; }
 
+.faq-toc {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 16px; font-size: 0.85rem;
+}
+.faq-toc strong { color: var(--ink); }
+.faq-toc a { color: var(--accent-ink); text-decoration: none; }
+.faq-toc a:hover { text-decoration: underline; }
+
+.faq-cat {
+  font-size: 1.2rem; color: var(--ink);
+  margin: 26px 0 4px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  scroll-margin-top: 60px; /* offset the sticky top nav when jumping */
+}
+
 .faq { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .faq-card {
   background: var(--card);

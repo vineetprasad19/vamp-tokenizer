@@ -12,13 +12,14 @@
 // decides how much to focus — is visible without any extra download.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const ATTN_TEMP = 0.12; // softmax temperature on cosine scores (lower = sharper)
 const ATTN_TOPN = 6;    // max arcs drawn per word
 const ATTN_MIN = 0.04;  // ignore very weak links
 
 const aEls = {
   input: document.getElementById("attnInput"),
   btn: document.getElementById("attnBtn"),
+  scale: document.getElementById("attnScale"),
+  scaleVal: document.getElementById("attnScaleVal"),
   causal: document.getElementById("attnCausal"),
   status: document.getElementById("attnStatus"),
   canvas: document.getElementById("attnCanvas"),
@@ -29,8 +30,12 @@ const aEls = {
 
 let aBusy = false;
 let _aTokens = null;    // array of display strings
+let _aVecs = null;      // normalized contextual vector per token (cached)
 let _aWeights = null;   // N×N attention rows (Float64Array per row)
 let _aSelected = null;  // index of the currently selected word
+
+// Slider value: higher = sharper softmax (attention concentrates on fewer words).
+function attnScale() { return Math.max(1, parseFloat(aEls.scale.value) || 8); }
 
 function aStatus(msg, kind) {
   aEls.status.textContent = msg;
@@ -60,8 +65,8 @@ function normalize(v) {
   return out;
 }
 
-// Run the model on the current text and build the attention matrix.
-async function computeAttention() {
+// Run the model on the current text and cache normalized per-token vectors.
+async function embedTokens() {
   const text = aEls.input.value.trim();
   if (!text) { aStatus("Type a sentence first.", "error"); return false; }
 
@@ -86,23 +91,30 @@ async function computeAttention() {
     vecs.push(normalize(rows[i]));
   }
 
-  const N = tokens.length;
+  _aTokens = tokens;
+  _aVecs = vecs;
+  aStatus("", "hidden");
+  return true;
+}
+
+// Rebuild the attention matrix from cached vectors using the current Focus scale
+// and causal toggle. Instant — no model re-run, so the slider feels live.
+function recomputeWeights() {
+  if (!_aVecs) return;
+  const N = _aVecs.length;
+  const scale = attnScale();
   const W = [];
   for (let i = 0; i < N; i++) {
     const scores = new Float64Array(N);
     for (let j = 0; j < N; j++) {
       if (aEls.causal.checked && j > i) { scores[j] = -Infinity; continue; }
-      let s = 0; const vi = vecs[i], vj = vecs[j];
+      let s = 0; const vi = _aVecs[i], vj = _aVecs[j];
       for (let k = 0; k < vi.length; k++) s += vi[k] * vj[k];
-      scores[j] = s / ATTN_TEMP;
+      scores[j] = s * scale;
     }
     W.push(softmaxRow(scores));
   }
-
-  _aTokens = tokens;
   _aWeights = W;
-  aStatus("", "hidden");
-  return true;
 }
 
 function renderWords() {
@@ -185,8 +197,9 @@ async function runAttention() {
   aBusy = true; aEls.btn.disabled = true;
   try {
     aStatus("Loading model…", "busy");
-    const ok = await computeAttention();
+    const ok = await embedTokens();
     if (!ok) return;
+    recomputeWeights();
     renderWords();
     aEls.legend.classList.remove("hidden");
     // Auto-select a fun default: "it" if present, else the last word.
@@ -201,11 +214,17 @@ async function runAttention() {
 }
 
 aEls.btn.addEventListener("click", runAttention);
-// Toggling the mask changes the weights, so recompute when ready.
-aEls.causal.addEventListener("change", () => { if (_aWeights) runAttention(); });
+// The Focus slider and causal toggle re-filter cached vectors instantly.
+aEls.scale.addEventListener("input", () => {
+  aEls.scaleVal.textContent = attnScale().toFixed(1) + "×";
+  if (_aVecs) { recomputeWeights(); drawArcs(); }
+});
+aEls.causal.addEventListener("change", () => {
+  if (_aVecs) { recomputeWeights(); drawArcs(); }
+});
 // Editing the text invalidates the current arcs.
 aEls.input.addEventListener("input", () => {
-  _aWeights = null; _aSelected = null;
+  _aVecs = null; _aWeights = null; _aSelected = null;
   aEls.words.replaceChildren();
   aEls.svg.replaceChildren();
   aEls.legend.classList.add("hidden");

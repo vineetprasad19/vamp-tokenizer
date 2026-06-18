@@ -160,8 +160,12 @@
       <textarea id="attnInput" class="text-in" rows="2" spellcheck="false">The animal didn't cross the street because it was too tired.</textarea>
       <div class="predict-controls">
         <button id="attnBtn" class="btn" type="button">Visualize attention</button>
+        <label for="attnScale">Focus <span id="attnScaleVal">8.0×</span>
+          <input type="range" id="attnScale" min="1" max="25" step="0.5" value="8" />
+        </label>
         <label class="check"><input type="checkbox" id="attnCausal"> Causal mask (only look left, like a text generator)</label>
       </div>
+      <p class="temp-hint">Focus = how sharply each word concentrates its attention · low = spread softly over many words · high = laser-focused on a few</p>
       <div id="attnStatus" class="cluster-status hidden"></div>
       <div id="attnStage" class="attn-stage">
         <div id="attnCanvas" class="attn-canvas">

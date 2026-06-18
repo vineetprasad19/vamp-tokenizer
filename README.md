@@ -27,8 +27,6 @@ Pages (static hosting).
   zoom; the model (~25 MB) downloads once on first use.
 - **Context window meter** — a bar showing how much of a model's context window
   (8K / 16K / 128K / 200K) your current text would fill.
-- **Meaning explorer** — compare two phrases and get a semantic **similarity**
-  score (cosine of their embedding vectors).
 - **Next-token predictor** — runs `distilGPT-2` in the browser to show the top
   predicted **next tokens** with probability bars; click one to generate. This is
   the core idea of how LLMs write text.

@@ -296,7 +296,7 @@ code {
 .ctx-fill.over { background: linear-gradient(90deg, #f0883e, #ff7b72); }
 .ctx-label { margin-top: 5px; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-/* --- Shared inputs for meaning + predict --- */
+/* --- Text input (predictor) --- */
 .text-in {
   width: 100%;
   background: var(--card); border: 1px solid var(--border); border-radius: 8px;
@@ -304,14 +304,6 @@ code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .text-in:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
-
-/* --- Meaning explorer --- */
-.meaning-grid { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-.meaning-grid .text-in { flex: 1; min-width: 180px; }
-.sim-result:empty { display: none; }
-.sim-text { font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-.sim-bar { height: 14px; border-radius: 7px; background: var(--card); border: 1px solid var(--border); overflow: hidden; }
-.sim-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff7b72, #f2cc60, #7ee787); }
 
 /* --- Next-token predictor --- */
 #predictInput { margin-bottom: 8px; resize: vertical; }

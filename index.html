@@ -118,25 +118,6 @@
       <div id="clusterPlot" class="cluster-plot"></div>
     </section>
 
-    <section class="meaning">
-      <h2 class="view-title">Meaning explorer</h2>
-      <details class="explain">
-        <summary>How does the model compare meaning?</summary>
-        <p>Because words and phrases become vectors, we can measure how close two
-        of them are. The <strong>similarity</strong> below is the angle between the
-        two vectors (cosine similarity): 100% = nearly identical meaning, 0% =
-        unrelated. Try "happy" vs "joyful" (high) versus "happy" vs "table"
-        (low).</p>
-      </details>
-      <div class="meaning-grid">
-        <input id="phraseA" class="text-in" type="text" placeholder="First phrase — e.g. happy" />
-        <input id="phraseB" class="text-in" type="text" placeholder="Second phrase — e.g. joyful" />
-      </div>
-      <button id="simBtn" class="btn" type="button">Compare meaning</button>
-      <div id="simStatus" class="cluster-status hidden"></div>
-      <div id="simResult" class="sim-result"></div>
-    </section>
-
     <section class="predict">
       <h2 class="view-title">Next-token predictor</h2>
       <details class="explain">
@@ -170,7 +151,6 @@
   <script src="app.js"></script>
   <script src="embeddings.js"></script>
   <script src="cluster.js"></script>
-  <script src="meaning.js"></script>
   <script src="predict.js"></script>
 </body>
 </html>

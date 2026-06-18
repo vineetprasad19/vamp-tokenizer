@@ -8,9 +8,43 @@ const visEls = {
   drop: document.getElementById("visDrop"),
   file: document.getElementById("visFile"),
   img: document.getElementById("visImg"),
+  numbers: document.getElementById("visNumbers"),
   status: document.getElementById("visStatus"),
   result: document.getElementById("visResult"),
 };
+
+const PIXEL_GRID = 12;
+
+// Show that "an image is just a grid of numbers": downsample to a small grid and
+// print each pixel's grayscale value (0-255).
+function renderPixelNumbers() {
+  const G = PIXEL_GRID;
+  const canvas = document.createElement("canvas");
+  canvas.width = G; canvas.height = G;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(visEls.img, 0, 0, G, G);
+  const data = ctx.getImageData(0, 0, G, G).data;
+
+  const cap = document.createElement("div");
+  cap.className = "num-cap";
+  cap.textContent = `The model resizes this to 224×224×3 = ${(224 * 224 * 3).toLocaleString()} numbers. ` +
+    `Here's a ${G}×${G} grayscale preview of those pixel values (0–255):`;
+
+  const grid = document.createElement("div");
+  grid.className = "pixel-grid";
+  grid.style.gridTemplateColumns = `repeat(${G}, 1fr)`;
+  for (let i = 0; i < G * G; i++) {
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+    const v = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    const cell = document.createElement("div");
+    cell.className = "pixel-cell";
+    cell.style.background = `rgb(${v},${v},${v})`;
+    cell.style.color = v > 140 ? "#000" : "#fff";
+    cell.textContent = v;
+    grid.appendChild(cell);
+  }
+  visEls.numbers.replaceChildren(cap, grid);
+}
 
 let _vis = null, _visLoading = null, visBusy = false;
 
@@ -81,8 +115,9 @@ function renderVis(preds) {
 function handleFile(file) {
   if (!file || !file.type.startsWith("image/")) return;
   const url = URL.createObjectURL(file);
-  visEls.img.src = url;
   visEls.img.hidden = false;
+  visEls.img.onload = renderPixelNumbers;
+  visEls.img.src = url;
   classifyImage(url);
 }
 

@@ -7,8 +7,44 @@ const ASR_MODEL = "Xenova/whisper-tiny.en";
 const spEls = {
   btn: document.getElementById("micBtn"),
   status: document.getElementById("micStatus"),
+  wave: document.getElementById("micWave"),
+  numbers: document.getElementById("micNumbers"),
   result: document.getElementById("micResult"),
 };
+
+// Show that "sound is just a stream of numbers": draw the waveform and print the
+// first raw sample values the model receives.
+function renderAudioNumbers(pcm) {
+  const canvas = spEls.wave;
+  canvas.hidden = false;
+  const W = canvas.width, H = canvas.height, mid = H / 2;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#0d1117";
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "#3fd3a6";
+  ctx.beginPath();
+  const step = Math.max(1, Math.floor(pcm.length / W));
+  for (let x = 0; x < W; x++) {
+    let min = 1, max = -1;
+    for (let j = 0; j < step; j++) {
+      const s = pcm[x * step + j] || 0;
+      if (s < min) min = s;
+      if (s > max) max = s;
+    }
+    ctx.moveTo(x, mid + min * mid);
+    ctx.lineTo(x, mid + max * mid);
+  }
+  ctx.stroke();
+
+  const cap = document.createElement("div");
+  cap.className = "num-cap";
+  cap.textContent = `Your audio = ${pcm.length.toLocaleString()} samples at 16,000 Hz ` +
+    `(${(pcm.length / 16000).toFixed(1)} s). Each sample is a number from −1 to 1 — here are the first 16:`;
+  const samp = document.createElement("div");
+  samp.className = "num-samples";
+  samp.textContent = "[" + Array.from(pcm.slice(0, 16)).map((v) => v.toFixed(3)).join(", ") + ", …]";
+  spEls.numbers.replaceChildren(cap, samp);
+}
 
 let _asr = null, _asrLoading = null;
 let _recorder = null, _chunks = [], _recording = false, _stream = null;
@@ -84,6 +120,7 @@ async function transcribe() {
     spStatus("Transcribing…", "busy");
     const blob = new Blob(_chunks);
     const pcm = await toPcm16k(blob);
+    renderAudioNumbers(pcm);
     const out = await model(pcm);
     spEls.result.textContent = (out.text || "").trim() || "(nothing heard — try again)";
     spStatus("", "hidden");

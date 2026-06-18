@@ -380,6 +380,25 @@ code {
 .file-drop:hover, .file-drop.drag { border-color: var(--accent); color: var(--accent-ink); }
 .vis-img { max-width: 100%; max-height: 240px; border-radius: 10px; margin: 10px 0; display: block; }
 
+/* --- "Show the numbers" visualizations (vision + speech) --- */
+.num-viz:empty { display: none; }
+.num-cap { font-size: 0.8rem; color: var(--muted); margin: 8px 0 6px; }
+.pixel-grid { display: grid; gap: 1px; max-width: 430px; }
+.pixel-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-variant-numeric: tabular-nums; border-radius: 1px;
+}
+.wave {
+  width: 100%; height: auto; border: 1px solid var(--border);
+  border-radius: 8px; background: #0d1117; margin-bottom: 6px; display: block;
+}
+.num-samples {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem; color: var(--accent-ink); word-break: break-all;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px;
+}
+
 /* --- Speech --- */
 .btn.recording { background: #f85149; }
 .mic-result:empty { display: none; }

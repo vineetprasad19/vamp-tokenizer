@@ -17,6 +17,7 @@
         browser. Type below to count tokens and characters — your text never
         leaves your device.
       </p>
+      <p><a class="page-link" href="learn.html">📚 New to AI? Read “LLMs explained like you're 5” →</a></p>
     </header>
 
     <section class="controls">
@@ -154,12 +155,19 @@
         <label for="temp">Temperature <span id="tempVal">1.0</span>
           <input type="range" id="temp" min="0.1" max="2" step="0.1" value="1" />
         </label>
-        <span class="temp-hint">low = safe &amp; repetitive · high = creative &amp; random</span>
+        <label for="topk">Top-k <span id="topkVal">off</span>
+          <input type="range" id="topk" min="0" max="50" step="1" value="0" />
+        </label>
+        <label for="topp">Top-p <span id="toppVal">1.00</span>
+          <input type="range" id="topp" min="0.1" max="1" step="0.05" value="1" />
+        </label>
       </div>
+      <p class="temp-hint">temperature = creativity knob · top-k / top-p = throw away unlikely words before choosing</p>
       <div class="predict-buttons">
         <button id="predictBtn" class="btn" type="button">Predict next token</button>
         <button id="sampleBtn" class="btn btn-alt" type="button">🎲 Sample next</button>
       </div>
+      <div id="predictPool" class="num-cap"></div>
       <div id="predictStatus" class="cluster-status hidden"></div>
       <div id="predictResult" class="predict-result"></div>
     </section>

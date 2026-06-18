@@ -13,6 +13,11 @@ const pEls = {
   sampleBtn: document.getElementById("sampleBtn"),
   temp: document.getElementById("temp"),
   tempVal: document.getElementById("tempVal"),
+  topk: document.getElementById("topk"),
+  topkVal: document.getElementById("topkVal"),
+  topp: document.getElementById("topp"),
+  toppVal: document.getElementById("toppVal"),
+  pool: document.getElementById("predictPool"),
   status: document.getElementById("predictStatus"),
   result: document.getElementById("predictResult"),
 };
@@ -31,6 +36,8 @@ function pStatus(msg, kind) {
 function temperature() {
   return Math.max(0.1, parseFloat(pEls.temp.value) || 1);
 }
+function getTopK() { return parseInt(pEls.topk.value, 10) || 0; }   // 0 = off
+function getTopP() { return parseFloat(pEls.topp.value) || 1; }     // 1 = off
 
 async function loadModel() {
   if (_model) return;
@@ -68,6 +75,27 @@ function topK(probs, k) {
   return idx.slice(0, Math.min(k, idx.length)).map((j) => ({ index: j, prob: probs[j] }));
 }
 
+// Apply temperature, then top-k and top-p (nucleus) filtering. Returns the
+// renormalized probability distribution and how many tokens survived.
+function filteredProbs(logits, temp, topk, topp) {
+  const probs = softmaxT(logits, temp);
+  const idx = Array.from({ length: probs.length }, (_, i) => i)
+    .sort((a, b) => probs[b] - probs[a]);
+  const kLimit = topk > 0 ? topk : idx.length;
+  const keep = [];
+  let cum = 0;
+  for (let i = 0; i < idx.length && keep.length < kLimit; i++) {
+    keep.push(idx[i]);
+    cum += probs[idx[i]];
+    if (topp < 1 && cum >= topp) break; // nucleus: stop once we've covered p
+  }
+  const out = new Float64Array(probs.length);
+  let sum = 0;
+  for (const j of keep) sum += probs[j];
+  for (const j of keep) out[j] = probs[j] / (sum || 1);
+  return { probs: out, poolSize: keep.length };
+}
+
 function sampleIndex(probs) {
   let r = Math.random(), acc = 0;
   for (let i = 0; i < probs.length; i++) { acc += probs[i]; if (acc >= r) return i; }
@@ -91,8 +119,11 @@ async function computeLogits() {
 
 function renderFromCache() {
   if (!_lastLogits) return;
-  const probs = softmaxT(_lastLogits, temperature());
-  renderPredictions(topK(probs, TOP_K));
+  const { probs, poolSize } = filteredProbs(_lastLogits, temperature(), getTopK(), getTopP());
+  pEls.pool.textContent =
+    `Candidate pool: ${poolSize.toLocaleString()} of 50,257 tokens can be chosen` +
+    (getTopK() || getTopP() < 1 ? " (trimmed by top-k / top-p)" : "");
+  renderPredictions(topK(probs, TOP_K).filter((t) => t.prob > 0));
 }
 
 async function predict() {
@@ -118,7 +149,7 @@ async function sampleNext() {
   try {
     pStatus("Loading model…", "busy");
     await computeLogits();
-    const probs = softmaxT(_lastLogits, temperature());
+    const { probs } = filteredProbs(_lastLogits, temperature(), getTopK(), getTopP());
     const idx = sampleIndex(probs);
     pEls.input.value += _tok.decode([idx]);
     _lastLogits = null; // text changed; recompute on next action
@@ -168,9 +199,19 @@ function renderPredictions(top) {
 
 pEls.btn.addEventListener("click", predict);
 pEls.sampleBtn.addEventListener("click", sampleNext);
+
+// All three sliders re-filter the cached logits instantly (no model re-run).
 pEls.temp.addEventListener("input", () => {
   pEls.tempVal.textContent = parseFloat(pEls.temp.value).toFixed(1);
-  renderFromCache(); // instant: just re-softmax the cached logits
+  renderFromCache();
+});
+pEls.topk.addEventListener("input", () => {
+  pEls.topkVal.textContent = getTopK() === 0 ? "off" : String(getTopK());
+  renderFromCache();
+});
+pEls.topp.addEventListener("input", () => {
+  pEls.toppVal.textContent = getTopP() >= 1 ? "1.00" : getTopP().toFixed(2);
+  renderFromCache();
 });
 // Re-running prediction is needed if the text is edited by hand.
 pEls.input.addEventListener("input", () => { _lastLogits = null; });

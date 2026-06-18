@@ -408,6 +408,38 @@ code {
   font-size: 0.95rem; line-height: 1.5;
 }
 
+/* --- Learn page link + FAQ cards --- */
+.page-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.page-link:hover { text-decoration: underline; }
+.back-link { display: inline-block; margin-bottom: 10px; color: var(--accent-ink); font-size: 0.9rem; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+
+.faq { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.faq-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.faq-card h2 { margin: 0 0 6px; font-size: 1.05rem; color: var(--ink); }
+.faq-card p { margin: 0 0 6px; color: #c9d1d9; line-height: 1.55; }
+.faq-card p:last-child { margin-bottom: 0; }
+.faq-card .real {
+  background: #102a1f;
+  border: 1px solid #1d4d38;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #9fe6c0;
+  font-size: 0.9rem;
+}
+
 footer {
   margin-top: 18px;
   color: var(--muted);

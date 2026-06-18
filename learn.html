@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLMs explained like you're 5 — Vamp Tokenizer</title>
+  <meta name="description" content="Large Language Models (LLMs) explained in plain words, like you're five, with real-life examples: tokens, embeddings, context, temperature, top-k/top-p, training, hallucination, RAG, and more." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <a class="back-link" href="index.html">← Back to the tool</a>
+      <h1>LLMs explained like you're 5</h1>
+      <p class="sub">
+        Big words made tiny. Every answer comes with a real-life example. Play with
+        the live demos on the <a href="index.html">main page</a> as you read.
+      </p>
+    </header>
+
+    <section class="faq">
+
+      <article class="faq-card">
+        <h2>🤖 What is an LLM?</h2>
+        <p>An LLM (Large Language Model) is a super-good guesser that has read a
+        giant library. You give it some words, and it guesses the next words —
+        one at a time — really, really well.</p>
+        <p class="real">🌍 Real life: like the autocomplete on your phone, but smart
+        enough to finish a whole story instead of just one word.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🧩 What is a token?</h2>
+        <p>The model doesn't read letters or whole words — it chops text into little
+        pieces called <strong>tokens</strong>. A piece can be a whole word, part of
+        a word, or punctuation.</p>
+        <p class="real">🌍 Real life: like LEGO. "cat" might be one brick;
+        "unbelievable" gets built from a few smaller bricks.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🔢 What is a token ID?</h2>
+        <p>Every token brick has a number printed on it. The model only understands
+        numbers, so each piece becomes its ID number.</p>
+        <p class="real">🌍 Real life: like every kid in class having a roll number —
+        the teacher can call "number 12" instead of the name.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>📍 What is an embedding (vector)?</h2>
+        <p>Each word is turned into a list of numbers that captures its meaning.
+        Words that mean similar things get similar lists, so they end up close
+        together in "meaning space".</p>
+        <p class="real">🌍 Real life: like seating kids by interests — football fans
+        together, painters together. "Happy" sits near "joyful", far from "table".</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🪟 What is the context window?</h2>
+        <p>It's how much the model can hold in its head at once. If your text is too
+        long, it forgets the earliest parts.</p>
+        <p class="real">🌍 Real life: like short-term memory — you can keep a phone
+        number in your head for a minute, but not the whole phone book.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>✍️ How does it write an answer?</h2>
+        <p>It guesses the next token, adds it, then guesses again — over and over —
+        until the answer is finished. That's the whole trick.</p>
+        <p class="real">🌍 Real life: like singing a song you half-know — each word
+        reminds you of the next one.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🌡️ What is temperature?</h2>
+        <p>A creativity knob. Low temperature = it always picks the safest next word
+        (careful but boring). High temperature = it takes risks (fun, but sometimes
+        silly).</p>
+        <p class="real">🌍 Real life: low = a careful student giving the textbook
+        answer; high = a friend brainstorming wild ideas.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🎯 What are top-k and top-p?</h2>
+        <p>Before picking a word, these rules throw away the very unlikely choices so
+        the model doesn't blurt out nonsense. <strong>Top-k</strong> keeps the best
+        k options; <strong>top-p</strong> keeps the best options until they add up
+        to "enough" probability.</p>
+        <p class="real">🌍 Real life: ordering only from the few popular dishes
+        everyone likes, instead of the entire menu including the weird stuff.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🏋️ What is training?</h2>
+        <p>The model practiced by reading huge amounts of text and guessing the next
+        word billions of times, getting a tiny bit better with each guess.</p>
+        <p class="real">🌍 Real life: like learning to ride a bike — you try, wobble,
+        fall, and slowly stop falling.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🎛️ What are "parameters" / model size?</h2>
+        <p>Parameters are the tiny knobs inside the model that training tuned. More
+        knobs usually means smarter — but bigger and slower.</p>
+        <p class="real">🌍 Real life: a giant mixing board with billions of sliders,
+        each nudged to just the right spot.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>😵 Why do LLMs make things up (hallucinate)?</h2>
+        <p>It's always guessing the next likely word — it doesn't truly "know" facts.
+        Sometimes a confident-sounding guess is simply wrong.</p>
+        <p class="real">🌍 Real life: like a kid confidently giving an answer in class
+        because it sounds right — even when it isn't.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>💬 What is a prompt?</h2>
+        <p>The prompt is what you say to the model — your question or instructions.
+        Clearer prompts get better answers.</p>
+        <p class="real">🌍 Real life: asking a genie "make me a sandwich" vs "make me
+        a grilled cheese with tomato" — the clearer wish gets the better result.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🔎 What is RAG ("chat with your documents")?</h2>
+        <p>The model is handed the right pages to read <em>before</em> answering, so
+        it doesn't have to guess from memory.</p>
+        <p class="real">🌍 Real life: an open-book test — you look the answer up in
+        your notes instead of remembering everything.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🩺 What is fine-tuning?</h2>
+        <p>Taking a model that already knows language and giving it extra practice on
+        a special topic so it becomes great at that.</p>
+        <p class="real">🌍 Real life: a doctor who finished general school, then
+        trained more to become a heart specialist.</p>
+      </article>
+
+      <article class="faq-card">
+        <h2>🦜 Is an LLM thinking or alive?</h2>
+        <p>No. It's a very fancy pattern-matcher that predicts words. It doesn't
+        feel or understand the way people do.</p>
+        <p class="real">🌍 Real life: like a parrot that learned to say clever-sounding
+        sentences — impressive, but it isn't a person.</p>
+      </article>
+
+    </section>
+
+    <footer>
+      <p><a class="back-link" href="index.html">← Back to the tool</a></p>
+    </footer>
+  </main>
+</body>
+</html>

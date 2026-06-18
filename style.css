@@ -434,6 +434,55 @@ code {
   font-size: 0.95rem; line-height: 1.5;
 }
 
+/* --- Attention arcs --- */
+.attn-legend { margin-top: 10px; }
+.attn-legend.hidden { display: none; }
+.attn-stage {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0d1117;
+}
+.attn-canvas {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+}
+.attn-arcs {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+}
+.attn-words {
+  position: relative;
+  white-space: nowrap;
+  padding: 86px 16px 18px; /* top band reserves room for the arcs */
+}
+.attn-word {
+  display: inline-block;
+  margin: 0 3px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.attn-word:hover { border-color: var(--accent); }
+.attn-word.attn-source {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #06281e;
+  font-weight: 700;
+}
+.attn-word.attn-target {
+  border-color: var(--accent-ink);
+  background: rgba(63, 211, 166, calc(var(--w, 0) * 0.55 + 0.08));
+}
+
 /* --- Learn page link + FAQ cards --- */
 .page-link {
   display: inline-block;

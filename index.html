@@ -146,6 +146,32 @@
       <div id="clusterPlot" class="cluster-plot"></div>
     </section>
 
+    <section class="attention">
+      <h2 class="view-title">Attention arcs</h2>
+      <details class="explain">
+        <summary>What are "attention weights"?</summary>
+        <p>Before guessing the next word, the model lets every word <strong>look at
+        every other word</strong> and decide how much to focus on each — these focus
+        amounts are the <strong>attention weights</strong>. It's how the model figures
+        out that "it" refers to "animal", or links a verb to its subject. Type a
+        sentence, click any word, and the arcs show what that word is paying attention
+        to — <strong>thicker arc = stronger focus</strong>.</p>
+      </details>
+      <textarea id="attnInput" class="text-in" rows="2" spellcheck="false">The animal didn't cross the street because it was too tired.</textarea>
+      <div class="predict-controls">
+        <button id="attnBtn" class="btn" type="button">Visualize attention</button>
+        <label class="check"><input type="checkbox" id="attnCausal"> Causal mask (only look left, like a text generator)</label>
+      </div>
+      <div id="attnStatus" class="cluster-status hidden"></div>
+      <div id="attnStage" class="attn-stage">
+        <div id="attnCanvas" class="attn-canvas">
+          <svg id="attnArcs" class="attn-arcs"></svg>
+          <div id="attnWords" class="attn-words"></div>
+        </div>
+      </div>
+      <p id="attnLegend" class="temp-hint attn-legend hidden">Click a word to see what it attends to. Thicker, brighter arcs = stronger attention. This is a simplified single-head self-attention — real transformers learn separate Query/Key projections for each of many heads.</p>
+    </section>
+
     <section class="predict">
       <h2 class="view-title">Next-token predictor</h2>
       <details class="explain">
@@ -263,6 +289,7 @@ Water boils at 100 degrees Celsius at sea level.</textarea>
   <script src="app.js"></script>
   <script src="embeddings.js"></script>
   <script src="cluster.js"></script>
+  <script src="attention.js"></script>
   <script src="compare.js"></script>
   <script src="predict.js"></script>
   <script src="rag.js"></script>

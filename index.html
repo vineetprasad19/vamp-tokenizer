@@ -415,6 +415,9 @@ Water boils at 100 degrees Celsius at sea level.</textarea>
         <button id="ttsStop" class="btn btn-alt" type="button">Stop</button>
       </div>
       <div id="ttsStatus" class="cluster-status hidden"></div>
+      <div id="ttsWords" class="tts-words"></div>
+      <canvas id="ttsWave" class="wave" width="760" height="110" hidden></canvas>
+      <p class="temp-hint">As it speaks, each <strong>word</strong> lights up and the <strong>waveform</strong> reacts — words becoming sound over time. (Browser voices don't expose their raw audio, so the wave is illustrative, but it's synced to the real speech timing. A speech-to-text model like Whisper reads a waveform like this in reverse.)</p>
     </section>
 
     <div id="status" class="status">Loading Python &amp; the tokenizer…</div>

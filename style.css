@@ -548,6 +548,10 @@ code {
   max-width: 240px; padding: 5px 8px; border-radius: 8px;
   border: 1px solid var(--border); background: var(--card); color: var(--ink);
 }
+.tts-words { margin: 10px 0; line-height: 1.8; font-size: 1.05rem; color: var(--ink); }
+.tts-words:empty { display: none; }
+.tts-word { padding: 1px 2px; border-radius: 4px; transition: background 0.08s, color 0.08s; }
+.tts-word.active { background: var(--accent); color: #06281e; font-weight: 700; }
 
 /* --- Learn page link + FAQ cards --- */
 .page-link {

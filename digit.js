@@ -16,7 +16,10 @@
   const ctx = pad.getContext("2d");
   const SIZE = pad.width; // square
   const ORT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js";
-  const MODEL_URL = "https://raw.githubusercontent.com/onnx/models/main/validated/vision/classification/mnist/model/mnist-12.onnx";
+  // The onnx/models repo stores weights in Git LFS, so raw.githubusercontent and
+  // jsdelivr return a text pointer (protobuf parse error). media.githubusercontent
+  // resolves the LFS object and serves the real ~26 KB ONNX binary with CORS.
+  const MODEL_URL = "https://media.githubusercontent.com/media/onnx/models/main/validated/vision/classification/mnist/model/mnist-12.onnx";
 
   let drawing = false, dirty = false, session = null, ortLib = null;
 
